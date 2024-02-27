@@ -1,0 +1,14 @@
+Kampala;12.9
+Edinburgh;11.7
+Harare;26.6
+Bosaso;25.2
+Winnipeg;13.3
+Whitehorse;3.5
+Medan;18.4
+Marrakesh;28.3
+Louisville;17.1
+Bissau;35.0
+Hanoi;0.9
+Valencia;34.7
+Yangon;24.6
+Arkhangelsk;0.6
