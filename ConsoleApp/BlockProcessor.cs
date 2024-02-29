@@ -1,27 +1,39 @@
+using System.Buffers;
+
 namespace ConsoleApp;
 
 public static class BlockProcessor
 {
-    public static int ProcessBlock(object? block)
+    public static Task<long> ProcessBlock(object? block)
     {
         if (block is null)
-            return 0;
+            return Task.FromResult(0L);
 
         var asBlock = (Block) block;
         if (asBlock.IsEmpty)
-            return 0;
+            return Task.FromResult(0L);
 
-        var asSpan = asBlock.Chars.Span;
+        // var lineTasks = new List<Task<int>>(10000);
+        var charsAsSpan = asBlock.Chars.Span;
 
-        var lineCnt = 0;
-        for (var i = 0; i < asBlock.Length; ++i)
+        var startOfNewLine = 0;
+        var numLines = 0;
+        for (var i = 0; i < charsAsSpan.Length; ++i)
         {
-            if (asSpan[i] == '\n' || i == asBlock.Length - 1)
+            if (charsAsSpan[i] == '\n' || i == charsAsSpan.Length - 1)
             {
-                lineCnt++;
+                var line = asBlock.Chars.Slice(startOfNewLine, i - startOfNewLine);
+                numLines += LineProcessor.ProcessLine(line);
+                // lineTasks.Add(Task.Factory.StartNew(LineProcessor.ProcessLine, line));
+                startOfNewLine = i + 1;
             }
         }
 
-        return lineCnt;
+        return Task.FromResult((long) numLines);
+
+        // return Task<long>.Factory.ContinueWhenAll(lineTasks.ToArray(), completedTasks =>
+        // {
+        //     return completedTasks.Sum(t => t.GetAwaiter().GetResult());
+        // });
     }
 }

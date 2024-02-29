@@ -26,7 +26,6 @@ public class BlockReaderTest
         var reader = new BlockReader(file2, BufferSize);
         var block = reader.ReadNextBlock();
 
-        Assert.Equal(contents.Length, block.Length);
         Assert.Equal(contents, block.Chars.ToString());
     }
     
@@ -41,7 +40,6 @@ public class BlockReaderTest
         var block1 = reader.ReadNextBlock();
         var block2 = reader.ReadNextBlock();
 
-        Assert.Equal(contents.Length, block1.Length);
         Assert.Equal(contents, block1.Chars.ToString());
         Assert.True(block2.IsEmpty);
     }
@@ -57,7 +55,6 @@ public class BlockReaderTest
         var block1 = reader.ReadNextBlock();
         var block2 = reader.ReadNextBlock();
 
-        Assert.Equal(contents.Length, block1.Length);
         Assert.Equal(contents, block1.Chars.ToString());
         Assert.True(block2.IsEmpty);
     }
@@ -73,7 +70,6 @@ public class BlockReaderTest
         var block1 = reader.ReadNextBlock();
         var block2 = reader.ReadNextBlock();
 
-        Assert.Equal(contents.Length, block1.Length);
         Assert.Equal(contents, block1.Chars.ToString());
         Assert.True(block2.IsEmpty);
     }
@@ -92,9 +88,7 @@ public class BlockReaderTest
 
         var blockStr = block1.Chars.ToString() + block2.Chars;
 
-        Assert.Equal(contents.Length, block1.Length + block2.Length);
         Assert.Equal(contents, blockStr);
         Assert.True(block3.IsEmpty);
     }
-
 }

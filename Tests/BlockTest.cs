@@ -7,9 +7,8 @@ public class BlockTest
     [Fact]
     public void EmptyBlock()
     {
-        var b = new Block();
+        var b = Block.Empty;
         Assert.True(b.IsEmpty);
-        Assert.Equal(0, b.Length);
         Assert.Equal(0, b.Chars.Length);
     }
 
@@ -18,9 +17,7 @@ public class BlockTest
     {
         const string initial = "initial";
         
-        var b = new Block(initial, ReadOnlySpan<char>.Empty);
-        Assert.False(b.IsEmpty);
-        Assert.Equal(initial.Length, b.Length);
+        var b = new Block(initial.AsSpan(), ReadOnlySpan<char>.Empty);
         Assert.Equal(initial, b.Chars.ToString());
     }
 
@@ -30,9 +27,7 @@ public class BlockTest
         const string initial = "initial";
         const string supplemental = "supplemental";
 
-        var b = new Block(initial, supplemental);
-        Assert.False(b.IsEmpty);
-        Assert.Equal(initial.Length + supplemental.Length, b.Length);
+        var b = new Block(initial.AsSpan(), supplemental.AsSpan());
         Assert.Equal(initial + supplemental, b.Chars.ToString());
     }
 }
