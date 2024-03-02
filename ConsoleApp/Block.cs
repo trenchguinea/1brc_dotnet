@@ -1,35 +1,48 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices.JavaScript;
-using System.Text;
 
 namespace ConsoleApp;
 
-public readonly struct Block
+public class Block
 {
     public static readonly Block Empty = new();
+
+    public readonly ReadOnlyMemory<byte> Bytes;
     
-    public readonly ReadOnlyMemory<char> Chars;
-    public readonly bool IsDefinitelyLast;
-    
-    public Block()
+    private Block()
     {
-        Chars = ReadOnlyMemory<char>.Empty;
-        IsDefinitelyLast = true;
+        Bytes = ReadOnlyMemory<byte>.Empty;
     }
 
-    public Block(ReadOnlySpan<char> initialBuffer, ReadOnlySpan<char> supplementalBuffer, bool isDefinitelyLast)
+    public Block(ReadOnlySpan<byte> initialBuffer, ReadOnlySpan<byte> supplementalBuffer)
     {
         Debug.Assert(initialBuffer.Length > 0);
 
-        var length = initialBuffer.Length + supplementalBuffer.Length;
+        // 10 is the new line char
+        var endsInNewLine = !supplementalBuffer.IsEmpty ? supplementalBuffer[^1] == 10 : initialBuffer[^1] == 10;
 
-        var totalBlock = new Memory<char>(new char[length]);
-        initialBuffer.CopyTo(totalBlock[..initialBuffer.Length].Span);
-        supplementalBuffer.CopyTo(totalBlock.Slice(initialBuffer.Length, supplementalBuffer.Length).Span);
+        // Ensure blocks always end in a new line to simplify later logic elsewhere
+        if (endsInNewLine)
+        {
+            var length = initialBuffer.Length + supplementalBuffer.Length;
+            
+            var totalBlock = new Memory<byte>(new byte[length]);
+            initialBuffer.CopyTo(totalBlock[..initialBuffer.Length].Span);
+            supplementalBuffer.CopyTo(totalBlock.Slice(initialBuffer.Length, supplementalBuffer.Length).Span);
 
-        Chars = totalBlock;
-        IsDefinitelyLast = isDefinitelyLast;
+            Bytes = totalBlock;
+        }
+        else
+        {
+            var length = initialBuffer.Length + supplementalBuffer.Length + 1;
+        
+            var totalBlock = new Memory<byte>(new byte[length]);
+            initialBuffer.CopyTo(totalBlock[..initialBuffer.Length].Span);
+            supplementalBuffer.CopyTo(totalBlock.Slice(initialBuffer.Length, supplementalBuffer.Length).Span);
+            totalBlock.Span[^1] = 10; // 10 is newline
+
+            Bytes = totalBlock;
+        }
     }
 
-    public bool IsEmpty => Chars.IsEmpty;
+    public bool IsEmpty => Bytes.IsEmpty;
 }

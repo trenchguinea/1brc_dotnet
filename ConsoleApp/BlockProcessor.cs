@@ -14,15 +14,15 @@ public static class BlockProcessor
             return Task.FromResult(0L);
 
         // var lineTasks = new List<Task<int>>(10000);
-        var charsAsSpan = asBlock.Chars.Span;
+        var charsAsSpan = asBlock.Bytes.Span;
 
         var startOfNewLine = 0;
         var numLines = 0;
         for (var i = 0; i < charsAsSpan.Length; ++i)
         {
-            if (charsAsSpan[i] == '\n' || i == charsAsSpan.Length - 1)
+            if (charsAsSpan[i] == '\n')
             {
-                var line = asBlock.Chars.Slice(startOfNewLine, i - startOfNewLine);
+                var line = asBlock.Bytes.Slice(startOfNewLine, i - startOfNewLine);
                 numLines += LineProcessor.ProcessLine(line);
                 // lineTasks.Add(Task.Factory.StartNew(LineProcessor.ProcessLine, line));
                 startOfNewLine = i + 1;

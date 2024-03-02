@@ -1,3 +1,4 @@
+using System.Text;
 using ConsoleApp;
 
 namespace Tests;
@@ -9,7 +10,7 @@ public class BlockReaderTest
     [Fact]
     public void TestEmptyReturnsEmptyBlock()
     {
-        using var file = File.OpenText("resources/Empty.txt");
+        using var file = File.Open("resources/Empty.txt", FileMode.Open);
         var reader = new BlockReader(file, BufferSize);
         var block = reader.ReadNextBlock();
         
@@ -19,76 +20,96 @@ public class BlockReaderTest
     [Fact]
     public void TestSmallReturnsAllChars()
     {
-        using var file = File.OpenText("resources/Small.txt");
-        var contents = file.ReadToEnd();
+        using var file = File.Open("resources/Small.txt", FileMode.Open);
+        var contents = new MemoryStream();
+        file.CopyTo(contents);
+        var contentsAsStr = Encoding.Default.GetString(contents.ToArray());
 
-        using var file2 = File.OpenText("resources/Small.txt");
-        var reader = new BlockReader(file2, BufferSize);
+        file.Position = 0;
+
+        var reader = new BlockReader(file, BufferSize);
         var block = reader.ReadNextBlock();
+        var blockAsStr = Encoding.Default.GetString(block.Bytes.ToArray());
 
-        Assert.Equal(contents, block.Chars.ToString());
+        Assert.Equal(contentsAsStr, blockAsStr);
     }
     
     [Fact]
     public void TestExactly64K_ReturnsAllChars()
     {
-        using var file = File.OpenText("resources/Exactly64k.txt");
-        var contents = file.ReadToEnd();
+        using var file = File.Open("resources/Exactly64k.txt", FileMode.Open);
+        var contents = new MemoryStream();
+        file.CopyTo(contents);
+        var contentsAsStr = Encoding.Default.GetString(contents.ToArray());
 
-        using var file2 = File.OpenText("resources/Exactly64k.txt");
-        var reader = new BlockReader(file2, BufferSize);
+        file.Position = 0;
+
+        var reader = new BlockReader(file, BufferSize);
         var block1 = reader.ReadNextBlock();
         var block2 = reader.ReadNextBlock();
+        var block1AsStr = Encoding.Default.GetString(block1.Bytes.ToArray());
 
-        Assert.Equal(contents, block1.Chars.ToString());
+        Assert.Equal(contentsAsStr, block1AsStr);
         Assert.True(block2.IsEmpty);
     }
 
     [Fact]
     public void TestExactly64KWhenEndsInNewLine_ReturnsAllChars()
     {
-        using var file = File.OpenText("resources/Exactly64k_EndsInNewLine.txt");
-        var contents = file.ReadToEnd();
+        using var file = File.Open("resources/Exactly64k_EndsInNewLine.txt", FileMode.Open);
+        var contents = new MemoryStream();
+        file.CopyTo(contents);
+        var contentsAsStr = Encoding.Default.GetString(contents.ToArray());
 
-        using var file2 = File.OpenText("resources/Exactly64k_EndsInNewLine.txt");
-        var reader = new BlockReader(file2, BufferSize);
+        file.Position = 0;
+
+        var reader = new BlockReader(file, BufferSize);
         var block1 = reader.ReadNextBlock();
         var block2 = reader.ReadNextBlock();
+        var block1AsStr = Encoding.Default.GetString(block1.Bytes.ToArray());
 
-        Assert.Equal(contents, block1.Chars.ToString());
+        Assert.Equal(contentsAsStr, block1AsStr);
         Assert.True(block2.IsEmpty);
     }
 
     [Fact]
     public void TestGreaterThan64KReturnsAllChars()
     {
-        using var file = File.OpenText("resources/BarelyGreaterThan64k.txt");
-        var contents = file.ReadToEnd();
+        using var file = File.Open("resources/BarelyGreaterThan64k.txt", FileMode.Open);
+        var contents = new MemoryStream();
+        file.CopyTo(contents);
+        var contentsAsStr = Encoding.Default.GetString(contents.ToArray());
 
-        using var file2 = File.OpenText("resources/BarelyGreaterThan64k.txt");
-        var reader = new BlockReader(file2, BufferSize);
+        file.Position = 0;
+
+        var reader = new BlockReader(file, BufferSize);
         var block1 = reader.ReadNextBlock();
         var block2 = reader.ReadNextBlock();
+        var block1AsStr = Encoding.Default.GetString(block1.Bytes.ToArray());
 
-        Assert.Equal(contents, block1.Chars.ToString());
+        Assert.Equal(contentsAsStr, block1AsStr);
         Assert.True(block2.IsEmpty);
     }
 
     [Fact]
     public void TestGreaterThan128KReturnsAllChars()
     {
-        using var file = File.OpenText("resources/BarelyGreaterThan128k.txt");
-        var contents = file.ReadToEnd();
+        using var file = File.Open("resources/BarelyGreaterThan128k.txt", FileMode.Open);
+        var contents = new MemoryStream();
+        file.CopyTo(contents);
+        var contentsAsStr = Encoding.Default.GetString(contents.ToArray());
 
-        using var file2 = File.OpenText("resources/BarelyGreaterThan128k.txt");
-        var reader = new BlockReader(file2, BufferSize);
+        file.Position = 0;
+
+        var reader = new BlockReader(file, BufferSize);
         var block1 = reader.ReadNextBlock();
         var block2 = reader.ReadNextBlock();
         var block3 = reader.ReadNextBlock();
 
-        var blockStr = block1.Chars.ToString() + block2.Chars;
+        var block1AsStr = Encoding.Default.GetString(block1.Bytes.ToArray());
+        var block2AsStr = Encoding.Default.GetString(block2.Bytes.ToArray());
 
-        Assert.Equal(contents, blockStr);
+        Assert.Equal(contentsAsStr, block1AsStr + block2AsStr);
         Assert.True(block3.IsEmpty);
     }
 }

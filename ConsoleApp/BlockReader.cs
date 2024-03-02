@@ -1,37 +1,38 @@
 namespace ConsoleApp;
 
-public sealed class BlockReader(StreamReader reader, int bufferSize)
+public sealed class BlockReader(Stream reader, int bufferSize)
 {
-    private readonly Memory<char> _buffer = new char[bufferSize];
-    private readonly Memory<char> _supplementalBuffer = new char[105];
+    private readonly Memory<byte> _buffer = new byte[bufferSize];
+    private readonly Memory<byte> _supplementalBuffer = new byte[105];
     
     public Block ReadNextBlock()
     {
-        var numRead = reader.ReadBlock(_buffer.Span);
+        var numRead = reader.ReadAtLeast(_buffer.Span, bufferSize, false);
+//        var numRead = reader.ReadBlock(_buffer.Span);
         if (numRead == 0)
         {
             return Block.Empty;
         }
-        
+
         if (numRead < bufferSize)
         {
-            return new Block(_buffer[..numRead].Span, ReadOnlySpan<char>.Empty, true);
+            return new Block(_buffer[..numRead].Span, ReadOnlySpan<byte>.Empty);
         }
 
         var supplementalBufferPos = -1;
         var supplementalSpan = _supplementalBuffer.Span;
 
-        var nextChar = reader.Read();
-        while (nextChar != -1)
+        var nextByte = reader.ReadByte();
+        while (nextByte != -1)
         {
-            supplementalSpan[++supplementalBufferPos] = (char) nextChar;
+            supplementalSpan[++supplementalBufferPos] = (byte) nextByte;
 
-            if (nextChar == '\n')
+            if (nextByte == 10) // 10 is newline
                 break;
 
-            nextChar = reader.Read();
+            nextByte = reader.ReadByte();
         }
 
-        return new Block(_buffer.Span, supplementalSpan[..(supplementalBufferPos+1)], false);
+        return new Block(_buffer.Span, supplementalSpan[..(supplementalBufferPos+1)]);
     }
 }

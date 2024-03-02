@@ -4762,26 +4762,5 @@ Wrocław;21.7
 Port Moresby;33.9
 Port-Gentil;19.5
 London;17.4
-Helsinki;18.9
+Helsinki;8.9
 Montreal;34.1
-Mzuzu;14.5
-Beijing;19.8
-Atlanta;2.4
-Palermo;9.3
-Baghdad;25.5
-San José;37.2
-Riga;4.6
-Tamale;24.9
-Kansas City;16.3
-Maun;26.6
-Calgary;9.6
-Tokyo;19.0
-Ngaoundéré;29.9
-Edmonton;17.1
-Lodwar;17.7
-Tegucigalpa;17.4
-Columbus;6.2
-Cotonou;25.1
-Manama;27.6
-Anadyr;-7.9
-Port Vila;20.3
