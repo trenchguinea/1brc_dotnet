@@ -8,16 +8,11 @@ public sealed class BlockReader(Stream reader, int bufferSize)
     public Block ReadNextBlock()
     {
         var numRead = reader.ReadAtLeast(_buffer.Span, bufferSize, false);
-//        var numRead = reader.ReadBlock(_buffer.Span);
         if (numRead == 0)
-        {
             return Block.Empty;
-        }
 
         if (numRead < bufferSize)
-        {
             return new Block(_buffer[..numRead].Span, ReadOnlySpan<byte>.Empty);
-        }
 
         var supplementalBufferPos = -1;
         var supplementalSpan = _supplementalBuffer.Span;
@@ -27,7 +22,7 @@ public sealed class BlockReader(Stream reader, int bufferSize)
         {
             supplementalSpan[++supplementalBufferPos] = (byte) nextByte;
 
-            if (nextByte == 10) // 10 is newline
+            if (nextByte == Constants.NewLine)
                 break;
 
             nextByte = reader.ReadByte();

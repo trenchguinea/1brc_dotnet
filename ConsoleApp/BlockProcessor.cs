@@ -4,36 +4,32 @@ namespace ConsoleApp;
 
 public static class BlockProcessor
 {
-    public static Task<long> ProcessBlock(object? block)
+    public static CityTemperatureStats ProcessBlock(object? block)
     {
-        if (block is null)
-            return Task.FromResult(0L);
+        var asBlock = (Block) block!;
 
-        var asBlock = (Block) block;
-        if (asBlock.IsEmpty)
-            return Task.FromResult(0L);
+        var calculator = new CityTemperatureStatCalc(500);
 
-        // var lineTasks = new List<Task<int>>(10000);
-        var charsAsSpan = asBlock.Bytes.Span;
-
-        var startOfNewLine = 0;
-        var numLines = 0;
-        for (var i = 0; i < charsAsSpan.Length; ++i)
+        var remainingBlockBytes = asBlock.Bytes;
+        while (!remainingBlockBytes.IsEmpty)
         {
-            if (charsAsSpan[i] == '\n')
-            {
-                var line = asBlock.Bytes.Slice(startOfNewLine, i - startOfNewLine);
-                numLines += LineProcessor.ProcessLine(line);
-                // lineTasks.Add(Task.Factory.StartNew(LineProcessor.ProcessLine, line));
-                startOfNewLine = i + 1;
-            }
+            // Get city
+            var semicolonPos = remainingBlockBytes.Span.IndexOf(Constants.Semicolon);
+            var city = remainingBlockBytes[..semicolonPos];
+
+            // Skip past semicolon
+            remainingBlockBytes = remainingBlockBytes[(semicolonPos+1)..];
+
+            // Get temperature
+            var newlinePos = remainingBlockBytes.Span.IndexOf(Constants.NewLine);
+            var temperature = remainingBlockBytes[..newlinePos];
+
+            calculator.AddCityTemp(new CityTemp(city, temperature));
+            
+            // Skip past newline
+            remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
         }
 
-        return Task.FromResult((long) numLines);
-
-        // return Task<long>.Factory.ContinueWhenAll(lineTasks.ToArray(), completedTasks =>
-        // {
-        //     return completedTasks.Sum(t => t.GetAwaiter().GetResult());
-        // });
+        return calculator.CalculateFinalStats();
     }
 }

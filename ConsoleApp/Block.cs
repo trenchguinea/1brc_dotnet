@@ -17,8 +17,9 @@ public class Block
     {
         Debug.Assert(initialBuffer.Length > 0);
 
-        // 10 is the new line char
-        var endsInNewLine = !supplementalBuffer.IsEmpty ? supplementalBuffer[^1] == 10 : initialBuffer[^1] == 10;
+        var endsInNewLine = !supplementalBuffer.IsEmpty ?
+            supplementalBuffer[^1] == Constants.NewLine :
+            initialBuffer[^1] == Constants.NewLine;
 
         // Ensure blocks always end in a new line to simplify later logic elsewhere
         if (endsInNewLine)
@@ -38,7 +39,7 @@ public class Block
             var totalBlock = new Memory<byte>(new byte[length]);
             initialBuffer.CopyTo(totalBlock[..initialBuffer.Length].Span);
             supplementalBuffer.CopyTo(totalBlock.Slice(initialBuffer.Length, supplementalBuffer.Length).Span);
-            totalBlock.Span[^1] = 10; // 10 is newline
+            totalBlock.Span[^1] = Constants.NewLine;
 
             Bytes = totalBlock;
         }

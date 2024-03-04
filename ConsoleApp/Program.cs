@@ -1,31 +1,37 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using ConsoleApp;
 
 var sw = Stopwatch.StartNew();
-await using var reader = File.Open("resources/measurements_medium.txt", FileMode.Open);
+await using var reader = File.Open("resources/measurements.txt", FileMode.Open);
 
 var blockReader = new BlockReader(reader, 64 * 1024);
-var processorTasks = new List<Task<long>>(210503);
+var processorTasks = new List<Task<CityTemperatureStats>>(210503);
 
-// var block = Time.Me("ReadNextBlock", blockReader.ReadNextBlock);
 var block = blockReader.ReadNextBlock();
-// var totalLineCnt = 0L;
+var totalBlockCnt = 1;
 
 while (!block.IsEmpty)
 {
-    // totalLineCnt += await Time.Me("ProcessBlock", BlockProcessor.ProcessBlock, block);
-    // totalLineCnt += await BlockProcessor.ProcessBlock(block);
-    processorTasks.Add(Task<Task<long>>.Factory.StartNew(BlockProcessor.ProcessBlock, block).Unwrap());
+ //   await BlockProcessor.ProcessBlock(block);
+    processorTasks.Add(Task<CityTemperatureStats>.Factory.StartNew(BlockProcessor.ProcessBlock, block));
 
-//    block = Time.Me("ReadNextBlock", blockReader.ReadNextBlock);
     block = blockReader.ReadNextBlock();
+    totalBlockCnt++;
 }
 
-var totalLineCnt = await Task<long>.Factory.ContinueWhenAll(processorTasks.ToArray(), tasks =>
+var allCityTemps = new CityTemperatureStats(500);
+await Task.Factory.ContinueWhenAll(processorTasks.ToArray(), tasks =>
 {
-    return tasks.Sum(t => t.GetAwaiter().GetResult());
+    foreach (var task in tasks)
+    {
+        allCityTemps.Merge(task.GetAwaiter().GetResult());
+    }
 });
 
 sw.Stop();
+
+allCityTemps.Dump();
+Console.WriteLine($"Num cities: {allCityTemps.NumCities}");
 Console.WriteLine($"Total time: {sw.ElapsedMilliseconds}ms");
-Console.WriteLine($"Total line cnt: {totalLineCnt}");
+// Console.WriteLine($"Total block cnt: {totalBlockCnt}");
