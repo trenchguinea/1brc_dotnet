@@ -40,7 +40,7 @@ public class BlockReaderTest
         using var file = File.Open("resources/Exactly64k.txt", FileMode.Open);
         var contents = new MemoryStream();
         file.CopyTo(contents);
-        var contentsAsStr = Encoding.UTF8.GetString(contents.ToArray());
+        var contentsAsStr = Encoding.UTF8.GetString(contents.ToArray()) + "\n";
 
         file.Position = 0;
 

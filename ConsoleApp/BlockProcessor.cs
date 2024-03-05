@@ -4,11 +4,11 @@ namespace ConsoleApp;
 
 public static class BlockProcessor
 {
-    public static CityTemperatureStats ProcessBlock(object? block)
+    public static CityTemperatureStatCalc ProcessBlock(object? block)
     {
         var asBlock = (Block) block!;
 
-        var calculator = new CityTemperatureStatCalc(500);
+        var calculator = new CityTemperatureStatCalc(150);
 
         var remainingBlockBytes = asBlock.Bytes;
         while (!remainingBlockBytes.IsEmpty)
@@ -30,6 +30,6 @@ public static class BlockProcessor
             remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
         }
 
-        return calculator.CalculateFinalStats();
+        return calculator;
     }
 }
