@@ -6,11 +6,11 @@ public class Block
 {
     public static readonly Block Empty = new();
 
-    public readonly ReadOnlyMemory<byte> Bytes;
+    private ReadOnlyMemory<byte> _bytes;
     
     private Block()
     {
-        Bytes = ReadOnlyMemory<byte>.Empty;
+        _bytes = ReadOnlyMemory<byte>.Empty;
     }
 
     public Block(ReadOnlySpan<byte> initialBuffer, ReadOnlySpan<byte> supplementalBuffer)
@@ -30,7 +30,7 @@ public class Block
             initialBuffer.CopyTo(totalBlock[..initialBuffer.Length].Span);
             supplementalBuffer.CopyTo(totalBlock.Slice(initialBuffer.Length, supplementalBuffer.Length).Span);
 
-            Bytes = totalBlock;
+            _bytes = totalBlock;
         }
         else
         {
@@ -41,9 +41,16 @@ public class Block
             supplementalBuffer.CopyTo(totalBlock.Slice(initialBuffer.Length, supplementalBuffer.Length).Span);
             totalBlock.Span[^1] = Constants.NewLine;
 
-            Bytes = totalBlock;
+            _bytes = totalBlock;
         }
     }
 
-    public bool IsEmpty => Bytes.IsEmpty;
+    public ReadOnlyMemory<byte> Bytes => _bytes;
+
+    public bool IsEmpty => _bytes.IsEmpty;
+
+    public void Clear()
+    {
+        _bytes = ReadOnlyMemory<byte>.Empty;
+    }
 }

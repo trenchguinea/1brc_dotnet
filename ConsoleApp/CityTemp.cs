@@ -3,17 +3,11 @@ using System.Text;
 
 namespace ConsoleApp;
 
-public readonly struct CityTemp
+public readonly struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<byte> temp)
 {
-    public CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<byte> temp)
-    {
-        City = Encoding.UTF8.GetString(city.Span);
-        Temperature = float.Parse(temp.Span);
-    }
+    public string City { get; } = Encoding.UTF8.GetString(city.Span);
 
-    public string City { get; }
-
-    public float Temperature { get; }
+    public float Temperature { get; } = float.Parse(temp.Span);
 
     public override string ToString() => $"{City};{Temperature}";
 }

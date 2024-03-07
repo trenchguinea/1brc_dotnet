@@ -8,7 +8,7 @@ public static class BlockProcessor
     {
         var asBlock = (Block) block!;
 
-        var calculator = new CityTemperatureStatCalc(150);
+        var calculator = new CityTemperatureStatCalc(413);
 
         var remainingBlockBytes = asBlock.Bytes;
         while (!remainingBlockBytes.IsEmpty)
@@ -29,6 +29,9 @@ public static class BlockProcessor
             // Skip past newline
             remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
         }
+        
+        // We're done with the block so free up the underlying buffer
+        asBlock.Clear();
 
         return calculator;
     }
