@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace ConsoleApp;
 
-public class Block
+public sealed class Block : IDisposable
 {
     public static readonly Block Empty = new();
 
@@ -48,8 +48,8 @@ public class Block
     public ReadOnlyMemory<byte> Bytes => _bytes;
 
     public bool IsEmpty => _bytes.IsEmpty;
-
-    public void Clear()
+    
+    public void Dispose()
     {
         _bytes = ReadOnlyMemory<byte>.Empty;
     }

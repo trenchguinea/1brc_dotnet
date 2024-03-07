@@ -4,13 +4,11 @@ namespace ConsoleApp;
 
 public static class BlockProcessor
 {
-    public static CityTemperatureStatCalc ProcessBlock(object? block)
+    public static void ProcessBlock(object? processingState)
     {
-        var asBlock = (Block) block!;
+        var state = (ProcessingState) processingState!;
 
-        var calculator = new CityTemperatureStatCalc(413);
-
-        var remainingBlockBytes = asBlock.Bytes;
+        var remainingBlockBytes = state.Block.Bytes;
         while (!remainingBlockBytes.IsEmpty)
         {
             // Get city
@@ -24,15 +22,13 @@ public static class BlockProcessor
             var newlinePos = remainingBlockBytes.Span.IndexOf(Constants.NewLine);
             var temperature = remainingBlockBytes[..newlinePos];
 
-            calculator.AddCityTemp(new CityTemp(city, temperature));
+            state.StatCalc.AddCityTemp(new CityTemp(city, temperature));
             
             // Skip past newline
             remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
         }
         
         // We're done with the block so free up the underlying buffer
-        asBlock.Clear();
-
-        return calculator;
+        state.Block.Dispose();
     }
 }

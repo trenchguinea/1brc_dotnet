@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection.Metadata;
 
 namespace ConsoleApp;
@@ -30,9 +31,10 @@ public class RunningStats(float temperature)
     }
 }
 
-public class CityTemperatureStatCalc(int capacity)
+public sealed class CityTemperatureStatCalc(int capacity)
 {
-    private readonly Dictionary<string, RunningStats> _stats = new(capacity);
+    private readonly ConcurrentDictionary<string, RunningStats> _stats =
+        new(Environment.ProcessorCount, capacity);
 
     public int NumCities => _stats.Count;
 
@@ -44,24 +46,24 @@ public class CityTemperatureStatCalc(int capacity)
         }
         else
         {
-            _stats.Add(cityTemp.City, new RunningStats(cityTemp.Temperature));
+            _stats.TryAdd(cityTemp.City, new RunningStats(cityTemp.Temperature));
         }
     }
     
-    public void Merge(CityTemperatureStatCalc other)
-    {
-        foreach (var (otherCity, otherStats) in other._stats)
-        {
-            if (_stats.TryGetValue(otherCity, out var thisStats))
-            {
-                thisStats.AddRunningStats(otherStats);
-            }
-            else
-            {
-                _stats.Add(otherCity, otherStats);
-            }
-        }
-    }
+    // public void Merge(CityTemperatureStatCalc other)
+    // {
+    //     foreach (var (otherCity, otherStats) in other._stats)
+    //     {
+    //         if (_stats.TryGetValue(otherCity, out var thisStats))
+    //         {
+    //             thisStats.AddRunningStats(otherStats);
+    //         }
+    //         else
+    //         {
+    //             _stats.TryAdd(otherCity, otherStats);
+    //         }
+    //     }
+    // }
 
     public SortedDictionary<string, RunningStats> FinalizeStats() => new(_stats);
 }
