@@ -1,37 +1,44 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using ConsoleApp;
 
+const int MaxProcessors = 50;
+
 var sw = Stopwatch.StartNew();
-await using var reader = File.Open("resources/measurements_medium.txt", FileMode.Open);
+await using var reader = File.Open("/Users/seangriffin/Coding/1brc_dotnet/ConsoleApp/resources/measurements_large.txt", FileMode.Open);
 
 var blockReader = new BlockReader(reader, 64 * 1024);
-var processorTasks = new List<Task>(210503);
+var processorTasks = new Task[MaxProcessors];
 var statsCalc = new CityTemperatureStatCalc(413);
 
+var processorCnt = -1;
 var block = blockReader.ReadNextBlock();
 while (!block.IsEmpty)
 {
+    processorCnt++;
     var state = new ProcessingState(statsCalc, block);
-    processorTasks.Add(Task.Factory.StartNew(BlockProcessor.ProcessBlock, state));
+    processorTasks[processorCnt] = Task.Factory.StartNew(BlockProcessor.ProcessBlock, state);
+
+    if (processorCnt == MaxProcessors - 1)
+    {
+        Task.WaitAll(processorTasks);
+        Array.Clear(processorTasks);
+        processorCnt = -1;
+    }
+
     block = blockReader.ReadNextBlock();
 }
 
-await Task.WhenAll(processorTasks);
+Array.Resize(ref processorTasks, processorCnt+1);
+Task.WaitAll(processorTasks);
 
-// var allCityTemps = new CityTemperatureStatCalc(413);
-// await Task.Factory.ContinueWhenAll(processorTasks.ToArray(), tasks =>
-// {
-//     foreach (var task in tasks)
-//     {
-//         allCityTemps.Merge(task.GetAwaiter().GetResult());
-//     }
-// });
-
-Console.Write("{");
-Console.Write(string.Join(", ",
+var finalBuffer = new StringBuilder(16 * 1024);
+finalBuffer.Append('{');
+finalBuffer.AppendJoin(", ",
     statsCalc.FinalizeStats().Select(kv =>
-        $"{kv.Key}={kv.Value.Min}/{float.Round(kv.Value.RunningAvg.Item1 / kv.Value.RunningAvg.Item2, 1)}/{kv.Value.Max}")));
-Console.WriteLine("}");
+        $"{kv.Key}={kv.Value.Min}/{float.Round(kv.Value.TemperatureSum / kv.Value.NumTemperatures, 1)}/{kv.Value.Max}"));
+finalBuffer.Append('}');
+Console.WriteLine(finalBuffer);
 
 sw.Stop();
 Console.WriteLine($"Num cities: {statsCalc.NumCities}");

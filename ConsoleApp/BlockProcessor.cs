@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 
 namespace ConsoleApp;
 
@@ -7,6 +8,7 @@ public static class BlockProcessor
     public static void ProcessBlock(object? processingState)
     {
         var state = (ProcessingState) processingState!;
+        var statCalc = state.StatCalc;
 
         var remainingBlockBytes = state.Block.Bytes;
         while (!remainingBlockBytes.IsEmpty)
@@ -22,7 +24,7 @@ public static class BlockProcessor
             var newlinePos = remainingBlockBytes.Span.IndexOf(Constants.NewLine);
             var temperature = remainingBlockBytes[..newlinePos];
 
-            state.StatCalc.AddCityTemp(new CityTemp(city, temperature));
+            statCalc.AddCityTemp(new CityTemp(city, temperature));
             
             // Skip past newline
             remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
