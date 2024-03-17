@@ -1,17 +1,23 @@
-using System.Globalization;
 using System.Text;
 
-namespace ConsoleApp;
+namespace Tests;
 
-public readonly struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<byte> temp)
+public class ParseFloatTest
 {
-    public ReadOnlyMemory<byte> City { get; } = city;
+    [Theory]
+    [InlineData("-20.9", -209)]
+    [InlineData("-2.9", -29)]
+    [InlineData("20.9", 209)]
+    [InlineData("2.9", 29)]
+    [InlineData("0.0", 0)]
+    [InlineData("-0.0", 0)]
+    public void TestCustomParsing_NegativeFullLength(string numAsStr, int expected)
+    {
+        var parsed = CustomParse(new ReadOnlySpan<byte>(Encoding.UTF8.GetBytes(numAsStr)));
+        Assert.Equal(expected, parsed);
+    }
 
-    public int Temperature { get; } = ParseTemp(temp.Span);
-
-    public override string ToString() => $"{Encoding.UTF8.GetString(City.Span)};{Temperature}";
-
-    private static int ParseTemp(ReadOnlySpan<byte> temp)
+    private static int CustomParse(ReadOnlySpan<byte> num)
     {
         // The char encoding starts char 0 at code 48
         const int start = 48;
@@ -19,17 +25,17 @@ public readonly struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<byte> 
         // Code 45 is a -
         const int neg = 45;
         
-        var i = temp.Length - 1;
+        var i = num.Length - 1;
 
-        var tenths = temp[i--] - start;
+        var tenths = num[i--] - start;
         i--; // skip over decimal
-        var ones = temp[i--] - start;
+        var ones = num[i--] - start;
 
         var tens = 0;
         
         // If i is negative then it means we're done parsing, else parse tens position (or negative sign)
         if (i >= 0)
-            tens = temp[i] - start;
+            tens = num[i] - start;
 
         // It's a negative number if we either just parsed a -
         // or we have one more character remaining, which must be a -

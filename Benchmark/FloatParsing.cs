@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Text;
 using BenchmarkDotNet.Attributes;
@@ -19,7 +20,7 @@ public class FloatParsing
         _third = new ReadOnlyMemory<byte>("-20.9"u8.ToArray());
     }
     
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public void ParseDefault()
     {
         float.Parse(_first.Span);
@@ -28,19 +29,46 @@ public class FloatParsing
     }
     
     [Benchmark]
-    public void ParseSpecificStyles()
+    public void ParseCustom()
     {
-        float.Parse(_first.Span, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
-        float.Parse(_second.Span, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
-        float.Parse(_third.Span, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
+        CustomParse(_first.Span);
+        CustomParse(_second.Span);
+        CustomParse(_third.Span);
     }
 
-    [Benchmark]
-    public void ParseSpecificStylesAndInvariantFormat()
+    private static int CustomParse(ReadOnlySpan<byte> num)
     {
-        float.Parse(_first.Span, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo);
-        float.Parse(_second.Span, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo);
-        float.Parse(_third.Span, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo);
-    }
+        // The char encoding starts char 0 at code 48
+        const int start = 48;
+        
+        // Code 45 is a -
+        const int neg = 45;
+        
+        var i = num.Length - 1;
 
+        var tenths = num[i--] - start;
+        i--; // skip over decimal
+        var ones = num[i--] - start;
+
+        var tens = 0;
+        
+        // If i is negative then it means we're done parsing, else parse tens position (or negative sign)
+        if (i >= 0)
+            tens = num[i] - start;
+
+        // It's a negative number if we either just parsed a -
+        // or we have one more character remaining, which must be a -
+        // because we'll never have a number > 99 or < 99
+        var isNeg = tens == (neg - start) || i == 1;
+
+        var asInt = 0;
+        
+        // Neg is a lower code than 0, so if tens is > 0 it means it's an actual number
+        if (tens > 0)
+            asInt += tens * 100;
+
+        asInt += ones * 10;
+        asInt += tenths;
+        return isNeg ? asInt * -1 : asInt;
+    }
 }

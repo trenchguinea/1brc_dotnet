@@ -18,11 +18,10 @@ while (!block.IsEmpty)
     processorCnt++;
     var state = new ProcessingState(statsCalc, block);
     processorTasks[processorCnt] = Task.Factory.StartNew(BlockProcessor.ProcessBlock, state);
-
+    
     if (processorCnt == MaxProcessors - 1)
     {
         Task.WaitAll(processorTasks);
-        Array.Clear(processorTasks);
         processorCnt = -1;
     }
 
@@ -36,7 +35,7 @@ var finalBuffer = new StringBuilder(16 * 1024);
 finalBuffer.Append('{');
 finalBuffer.AppendJoin(", ",
     statsCalc.FinalizeStats().Select(kv =>
-        $"{kv.Key}={kv.Value.Min}/{float.Round(kv.Value.TemperatureSum / kv.Value.NumTemperatures, 1)}/{kv.Value.Max}"));
+        $"{kv.Key}={kv.Value.MinAsFloat}/{kv.Value.TemperatureAvg}/{kv.Value.MaxAsFloat}"));
 finalBuffer.Append('}');
 Console.WriteLine(finalBuffer);
 
