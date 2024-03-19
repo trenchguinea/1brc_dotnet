@@ -1,4 +1,6 @@
+using System.Collections;
 using System.ComponentModel;
+using System.Numerics;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using Bogus;
@@ -54,9 +56,19 @@ public class SpanHashCodeBenchmark
     // }
     //
     [Benchmark]
-    public void HashUsingBitConverter2()
+    public void HashUsingBitConverter()
     {
         var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer());
+        foreach (var sample in _sampleMemories)
+        {
+            dict.TryAdd(sample, 13);
+        }
+    }
+
+    [Benchmark]
+    public void HashUsingBitConverter2()
+    {
+        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer2());
         foreach (var sample in _sampleMemories)
         {
             dict.TryAdd(sample, 13);
@@ -83,15 +95,15 @@ public class SpanHashCodeBenchmark
     //     }
     // }
 
-    [Benchmark]
-    public void OneAtATimeHash()
-    {
-        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new OneAtATimeHashComparer());
-        foreach (var sample in _sampleMemories)
-        {
-            dict.TryAdd(sample, 13);
-        }
-    }
+    // [Benchmark]
+    // public void OneAtATimeHash()
+    // {
+    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new OneAtATimeHashComparer());
+    //     foreach (var sample in _sampleMemories)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
 
     [Benchmark]
     public void BurtleBurtleHash()
@@ -134,6 +146,38 @@ public class SpanHashCodeBenchmark
     }
 
     private class HashBitConverterComparer : IEqualityComparer<ReadOnlyMemory<byte>>
+    {
+        public bool Equals(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) => x.Span.SequenceEqual(y.Span);
+        public int GetHashCode(ReadOnlyMemory<byte> obj)
+        {
+            var span = obj.Span;
+            var div = span.Length / 4;
+
+            var hash = 0;
+            for (var i = 0; i < div; ++i)
+            {
+                hash ^= BitConverter.ToInt32(span[..4]);
+                span = span[4..];
+            }
+
+            switch (span.Length)
+            {
+                case 3:
+                    hash ^= span[2];
+                    goto case 2;
+                case 2:
+                    hash ^= span[1];
+                    goto case 1;
+                case 1:
+                    hash ^= span[0];
+                    break;
+            }
+
+            return hash;
+        }
+    }
+
+    private class HashBitConverterComparer2 : IEqualityComparer<ReadOnlyMemory<byte>>
     {
         public bool Equals(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) => x.Span.SequenceEqual(y.Span);
         public int GetHashCode(ReadOnlyMemory<byte> obj)

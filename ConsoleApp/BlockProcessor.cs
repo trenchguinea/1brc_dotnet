@@ -5,11 +5,11 @@ namespace ConsoleApp;
 
 public static class BlockProcessor
 {
-    public static void ProcessBlock(object? processingState)
+    public static CityTemperatureStatCalc ProcessBlock(object? processingState)
     {
         var state = (ProcessingState) processingState!;
-        var statCalc = state.StatCalc;
 
+        var statCalc = new CityTemperatureStatCalc(state.ExpectedCityCount);
         var remainingBlockBytes = state.Block.Bytes;
         while (!remainingBlockBytes.IsEmpty)
         {
@@ -32,5 +32,6 @@ public static class BlockProcessor
         
         // We're done with the block so free up the underlying buffer
         state.Block.Dispose();
+        return statCalc;
     }
 }
