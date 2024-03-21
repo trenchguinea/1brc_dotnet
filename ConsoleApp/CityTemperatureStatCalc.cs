@@ -44,7 +44,7 @@ public sealed class RunningStats
 public sealed class CityTemperatureStatCalc(int capacity)
 {
     private static readonly ConcurrentDictionary<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>> CachedCityNames
-        = new(Environment.ProcessorCount, 413, SpanEqualityComparator.Instance);
+        = new(Environment.ProcessorCount * 2, 413, SpanEqualityComparator.Instance);
     
     private readonly Dictionary<ReadOnlyMemory<byte>, RunningStats> _stats =
         new(capacity, SpanEqualityComparator.Instance);

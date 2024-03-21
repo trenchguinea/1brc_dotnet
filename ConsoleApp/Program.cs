@@ -2,7 +2,7 @@
 using System.Text;
 using ConsoleApp;
 
-var MaxProcessors = 16;
+var MaxProcessors = 32;
 const int ExpectedCityCnt = 413;
 
 var sw = Stopwatch.StartNew();
@@ -23,13 +23,11 @@ while (!block.IsEmpty)
     
     if (processorCnt == MaxProcessors - 1)
     {
-        await Task.WhenAll(processorTasks).ContinueWith(task =>
+        foreach (var bucket in Interleaved(processorTasks))
         {
-            foreach (var calc in task.Result)
-            {
-                totalCalc.Merge(calc);
-            }
-        });
+            var calcTask = await bucket;
+            totalCalc.Merge(await calcTask);
+        }
         processorCnt = -1;
     }
 
@@ -37,13 +35,35 @@ while (!block.IsEmpty)
 }
 
 Array.Resize(ref processorTasks, processorCnt+1);
-await Task.WhenAll(processorTasks).ContinueWith(task =>
+foreach (var bucket in Interleaved(processorTasks))
 {
-    foreach (var calc in task.Result)
+    var calcTask = await bucket;
+    totalCalc.Merge(await calcTask);
+}
+
+// This uses the approach described in https://devblogs.microsoft.com/pfxteam/processing-tasks-as-they-complete/
+static Task<Task<T>>[] Interleaved<T>(IReadOnlyCollection<Task<T>> tasks)
+{
+    var buckets = new TaskCompletionSource<Task<T>>[tasks.Count];
+    var results = new Task<Task<T>>[buckets.Length];
+    for (var i = 0; i < buckets.Length; i++) 
     {
-        totalCalc.Merge(calc);
+        buckets[i] = new TaskCompletionSource<Task<T>>();
+        results[i] = buckets[i].Task;
     }
-});
+
+    var nextTaskIndex = -1;
+    Action<Task<T>> continuation = completed =>
+    {
+        var bucket = buckets[Interlocked.Increment(ref nextTaskIndex)];
+        bucket.TrySetResult(completed);
+    };
+
+    foreach (var inputTask in tasks)
+        inputTask.ContinueWith(continuation, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+    return results;
+}
 
 var finalBuffer = new StringBuilder(16 * 1024);
 finalBuffer.Append('{');
