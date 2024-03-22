@@ -1,6 +1,6 @@
 namespace ConsoleApp;
 
-public class SpanEqualityComparator : IEqualityComparer<ReadOnlyMemory<byte>>
+public sealed class SpanEqualityComparator : IEqualityComparer<ReadOnlyMemory<byte>>
 {
     public static readonly SpanEqualityComparator Instance = new SpanEqualityComparator();
 
