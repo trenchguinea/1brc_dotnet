@@ -21,6 +21,6 @@ public sealed class SpanEqualityComparator : IEqualityComparer<ReadOnlyMemory<by
             hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));
         }
 
-        return HashCode.Combine(hash, span.Length);
+        return hash ^ span.Length;
     }
 }

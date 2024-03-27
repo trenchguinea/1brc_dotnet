@@ -1,33 +1,50 @@
+using System.Buffers;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.JavaScript;
+
 namespace ConsoleApp;
 
 public sealed class BlockReader(Stream reader, int bufferSize)
 {
-    private readonly Memory<byte> _buffer = new byte[bufferSize];
-    private readonly Memory<byte> _supplementalBuffer = new byte[105];
+    private const int MaxLineLength = 107; // 100 in city name + ; + 5 in temperature + newline
     
     public Block ReadNextBlock()
     {
-        var numRead = reader.ReadAtLeast(_buffer.Span, bufferSize, false);
+        var buffer = ArrayPool<byte>.Shared.Rent(bufferSize + MaxLineLength);
+
+        var numRead = reader.Read(buffer, 0, bufferSize);
         if (numRead == 0)
             return Block.Empty;
 
         if (numRead < bufferSize)
-            return new Block(_buffer[..numRead].Span, ReadOnlySpan<byte>.Empty);
+        {
+            EnsureBlockEndsInNewLine(ref buffer, ref numRead);
+            return new Block(buffer, numRead, ArrayPool<byte>.Shared);
+        }
 
-        var supplementalBufferPos = -1;
-        var supplementalSpan = _supplementalBuffer.Span;
+        // If here, it means entire bufferSize was read
+        // Walk forward until we either reach the end of the file or the new line to complete the block
 
+        var pos = numRead;
         var nextByte = reader.ReadByte();
         while (nextByte != -1)
         {
-            supplementalSpan[++supplementalBufferPos] = (byte) nextByte;
-
+            buffer[pos++] = (byte) nextByte;
             if (nextByte == Constants.NewLine)
                 break;
-
             nextByte = reader.ReadByte();
         }
 
-        return new Block(_buffer.Span, supplementalSpan[..(supplementalBufferPos+1)]);
+        EnsureBlockEndsInNewLine(ref buffer, ref pos);
+        return new Block(buffer, pos, ArrayPool<byte>.Shared);
+    }
+
+    // Possible inline?
+    private static void EnsureBlockEndsInNewLine(ref byte[] buffer, ref int endPos)
+    {
+        if (buffer[endPos - 1] != Constants.NewLine)
+        {
+            buffer[endPos++] = Constants.NewLine;
+        }
     }
 }

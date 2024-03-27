@@ -6,32 +6,49 @@ namespace Benchmark;
 [MemoryDiagnoser]
 public class BlockReaderBenchmark
 {
-    [Params(32*1024, 64*1024, 128*1024)]
+    [Params(512*1024, 1024 * 1024, 2 * 1024 * 1024)]
     public int BufferSize;
 
     private Stream? _stream;
-    private BlockReader? _blockReader;
-    
-    [IterationSetup]
+
+    [GlobalSetup]
     public void Setup()
     {
-        _stream = File.Open("resources/measurements_mediumlarge.txt", FileMode.Open);
-        _blockReader = new BlockReader(_stream, BufferSize);
+        _stream = File.Open("resources/measurements_large.txt", FileMode.Open);
     }
 
-    [IterationCleanup]
+    [GlobalCleanup]
     public void Cleanup()
     {
         _stream!.Dispose();
     }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public void ReadBlock()
     {
-        Block block;
-        do
+        _stream!.Position = 0;
+
+        var blockReader = new BlockReader(_stream!, BufferSize);
+        var block = blockReader.ReadNextBlock();
+        while (!block.IsEmpty)
         {
-            block = _blockReader!.ReadNextBlock();
-        } while (!block.IsEmpty);
+            block.Dispose();
+            blockReader.ReadNextBlock();
+        }
     }
+    
+    [Benchmark]
+    public void ReadBlock2()
+    {
+        _stream!.Position = 0;
+
+        var blockReader = new BlockReader(_stream!, BufferSize);
+        var block = blockReader.ReadNextBlock();
+        while (!block.IsEmpty)
+        {
+            block.Dispose();
+            blockReader.ReadNextBlock();
+        }
+    }
+
 }

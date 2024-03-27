@@ -53,11 +53,12 @@ public sealed class CityTemperatureStatCalc(int capacity)
 
     public void AddCityTemp(CityTemp cityTemp)
     {
-        if (!_stats.TryGetValue(cityTemp.City, out var runningStats))
+        var cityName = cityTemp.City;
+        if (!_stats.TryGetValue(cityName, out var runningStats))
         {
-            if (!CachedCityNames.TryGetValue(cityTemp.City, out var cachedName))
+            if (!CachedCityNames.TryGetValue(cityName, out var cachedName))
             {
-                cachedName = new ReadOnlyMemory<byte>(cityTemp.City.ToArray());
+                cachedName = new ReadOnlyMemory<byte>(cityName.ToArray());
                 CachedCityNames[cachedName] = cachedName;
             }
 

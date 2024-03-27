@@ -75,6 +75,16 @@ public class SpanHashCodeBenchmark
         }
     }
 
+    [Benchmark]
+    public void HashUsingBitConverter3()
+    {
+        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer3());
+        foreach (var sample in _sampleMemories)
+        {
+            dict.TryAdd(sample, 13);
+        }
+    }
+
     // [Benchmark]
     // public void HashUsingHashCodeClass()
     // {
@@ -105,15 +115,15 @@ public class SpanHashCodeBenchmark
     //     }
     // }
 
-    [Benchmark]
-    public void BurtleBurtleHash()
-    {
-        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new BurtleBurtleHashComparer());
-        foreach (var sample in _sampleMemories)
-        {
-            dict.TryAdd(sample, 13);
-        }
-    }
+    // [Benchmark]
+    // public void BurtleBurtleHash()
+    // {
+    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new BurtleBurtleHashComparer());
+    //     foreach (var sample in _sampleMemories)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
 
     private class HashFirstAndLastBytePlusLengthComparer : IEqualityComparer<ReadOnlyMemory<byte>>
     {
@@ -192,6 +202,24 @@ public class SpanHashCodeBenchmark
             }
 
             return HashCode.Combine(hash, span.Length);
+        }
+    }
+
+    private class HashBitConverterComparer3 : IEqualityComparer<ReadOnlyMemory<byte>>
+    {
+        public bool Equals(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) => x.Span.SequenceEqual(y.Span);
+        public int GetHashCode(ReadOnlyMemory<byte> obj)
+        {
+            var span = obj.Span;
+            var div = span.Length / 4;
+
+            var hash = 0;
+            for (var i = 0; i < div; ++i)
+            {
+                hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));
+            }
+
+            return hash ^ span.Length;
         }
     }
 

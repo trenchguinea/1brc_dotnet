@@ -4,6 +4,7 @@ using System.Text;
 using Benchmark;
 using BenchmarkDotNet.Running;
 using Bogus;
+using ConsoleApp;
 
 // Randomizer.Seed = new Random(10);
 //
@@ -22,4 +23,4 @@ using Bogus;
 // }
 //
 // return;
-BenchmarkRunner.Run<SpanHashCodeBenchmark>();
+BenchmarkRunner.Run<BlockReaderBenchmark>();

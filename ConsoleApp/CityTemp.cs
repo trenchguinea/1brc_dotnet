@@ -21,8 +21,8 @@ public readonly ref struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<by
         
         var i = temp.Length - 1;
 
-        var tenths = temp[i--] - zeroCode;
-        i--; // skip over decimal
+        var tenths = temp[i] - zeroCode;
+        i -= 2; // skip over decimal
         var ones = temp[i--] - zeroCode;
 
         var tens = 0;
@@ -34,16 +34,10 @@ public readonly ref struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<by
         // It's a negative number if we either just parsed a -
         // or we have one more character remaining, which must be a -
         // because we'll never have a number > 99 or < 99
-        var isNeg = tens == (neg - zeroCode) || i == 1;
+        var isNeg = tens == (neg - zeroCode) | i == 1;
 
-        var asInt = 0;
-        
         // Neg is a lower code than 0, so if tens is > 0 it means it's an actual number
-        if (tens > 0)
-            asInt += tens * 100;
-
-        asInt += ones * 10;
-        asInt += tenths;
+        var asInt = (tens > 0 ? tens * 100 : 0) + (ones * 10) + tenths;
         return isNeg ? asInt * -1 : asInt;
     }
 }

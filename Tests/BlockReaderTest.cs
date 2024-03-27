@@ -12,7 +12,7 @@ public class BlockReaderTest
     {
         using var file = File.Open("resources/Empty.txt", FileMode.Open);
         var reader = new BlockReader(file, BufferSize);
-        var block = reader.ReadNextBlock();
+        using var block = reader.ReadNextBlock();
         
         Assert.True(block.IsEmpty);
     }
@@ -28,7 +28,7 @@ public class BlockReaderTest
         file.Position = 0;
 
         var reader = new BlockReader(file, BufferSize);
-        var block = reader.ReadNextBlock();
+        using var block = reader.ReadNextBlock();
         var blockAsStr = Encoding.UTF8.GetString(block.Bytes.ToArray());
 
         Assert.Equal(contentsAsStr, blockAsStr);
@@ -45,8 +45,8 @@ public class BlockReaderTest
         file.Position = 0;
 
         var reader = new BlockReader(file, BufferSize);
-        var block1 = reader.ReadNextBlock();
-        var block2 = reader.ReadNextBlock();
+        using var block1 = reader.ReadNextBlock();
+        using var block2 = reader.ReadNextBlock();
         var block1AsStr = Encoding.UTF8.GetString(block1.Bytes.ToArray());
 
         Assert.Equal(contentsAsStr, block1AsStr);
@@ -64,8 +64,8 @@ public class BlockReaderTest
         file.Position = 0;
 
         var reader = new BlockReader(file, BufferSize);
-        var block1 = reader.ReadNextBlock();
-        var block2 = reader.ReadNextBlock();
+        using var block1 = reader.ReadNextBlock();
+        using var block2 = reader.ReadNextBlock();
         var block1AsStr = Encoding.UTF8.GetString(block1.Bytes.ToArray());
 
         Assert.Equal(contentsAsStr, block1AsStr);
@@ -83,8 +83,8 @@ public class BlockReaderTest
         file.Position = 0;
 
         var reader = new BlockReader(file, BufferSize);
-        var block1 = reader.ReadNextBlock();
-        var block2 = reader.ReadNextBlock();
+        using var block1 = reader.ReadNextBlock();
+        using var block2 = reader.ReadNextBlock();
         var block1AsStr = Encoding.UTF8.GetString(block1.Bytes.ToArray());
 
         Assert.Equal(contentsAsStr, block1AsStr);
@@ -102,9 +102,9 @@ public class BlockReaderTest
         file.Position = 0;
 
         var reader = new BlockReader(file, BufferSize);
-        var block1 = reader.ReadNextBlock();
-        var block2 = reader.ReadNextBlock();
-        var block3 = reader.ReadNextBlock();
+        using var block1 = reader.ReadNextBlock();
+        using var block2 = reader.ReadNextBlock();
+        using var block3 = reader.ReadNextBlock();
 
         var block1AsStr = Encoding.UTF8.GetString(block1.Bytes.ToArray());
         var block2AsStr = Encoding.UTF8.GetString(block2.Bytes.ToArray());
