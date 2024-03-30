@@ -20,36 +20,38 @@ public class Program
         var processorTasks = new Task<CityTemperatureStatCalc>[MaxProcessors];
 
         var totalCalc = new CityTemperatureStatCalc(ExpectedCityCnt);
-
+        
+        var totalBlockCnt = 0;
         var processorCnt = -1;
         var block = blockReader.ReadNextBlock();
         while (!block.IsEmpty)
         {
             processorCnt++;
-
+            totalBlockCnt++;
+            
             var state = new ProcessingState(ExpectedCityCnt, block);
             processorTasks[processorCnt] = Task<CityTemperatureStatCalc>.Factory.StartNew(BlockProcessor.ProcessBlock, state);
-  
+            
             if (processorCnt == MaxProcessors - 1)
             {
-                foreach (var bucket in Interleaved(processorTasks))
+                foreach (var calcTask in Interleaved(processorTasks))
                 {
-                    var calcTask = await bucket;
-                    totalCalc.Merge(await calcTask);
+                    totalCalc.Merge(await calcTask.Unwrap());
                 }
                 processorCnt = -1;
             }
-
+            
             block = blockReader.ReadNextBlock();
         }
-
+        
         Array.Resize(ref processorTasks, processorCnt+1);
-        foreach (var bucket in Interleaved(processorTasks))
+        foreach (var calcTask in Interleaved(processorTasks))
         {
-            var calcTask = await bucket;
-            totalCalc.Merge(await calcTask);
+            totalCalc.Merge(await calcTask.Unwrap());
         }
         
+        // Time.Me("Dump output", () =>
+        // {
         var finalBuffer = new StringBuilder(16 * 1024);
         finalBuffer.Append('{');
         finalBuffer.AppendJoin(", ",
@@ -57,8 +59,10 @@ public class Program
                 $"{kv.Key}={kv.Value.Min:F1}/{kv.Value.TemperatureAvg:F1}/{kv.Value.Max:F1}"));
         finalBuffer.Append('}');
         Console.WriteLine(finalBuffer);
+        // });
 
         sw.Stop();
+        Console.WriteLine($"Num blocks: {totalBlockCnt}");
         Console.WriteLine($"Num cities: {totalCalc.NumCities}");
         Console.WriteLine($"Total time: {sw.ElapsedMilliseconds}ms");
     }

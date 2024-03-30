@@ -43,9 +43,9 @@ public sealed class RunningStats
 
 public sealed class CityTemperatureStatCalc(int capacity)
 {
-    private static readonly ConcurrentDictionary<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>> CachedCityNames
-        = new(Environment.ProcessorCount * 2, 413, SpanEqualityComparator.Instance);
-    
+    // private static readonly ConcurrentDictionary<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>> CachedCityNames
+    //     = new(Environment.ProcessorCount * 2, 413, SpanEqualityComparator.Instance);
+
     private readonly Dictionary<ReadOnlyMemory<byte>, RunningStats> _stats =
         new(capacity, SpanEqualityComparator.Instance);
     
@@ -56,12 +56,13 @@ public sealed class CityTemperatureStatCalc(int capacity)
         var cityName = cityTemp.City;
         if (!_stats.TryGetValue(cityName, out var runningStats))
         {
-            if (!CachedCityNames.TryGetValue(cityName, out var cachedName))
-            {
-                cachedName = new ReadOnlyMemory<byte>(cityName.ToArray());
-                CachedCityNames[cachedName] = cachedName;
-            }
-
+            // if (!CachedCityNames.TryGetValue(cityName, out var cachedName))
+            // {
+            //     cachedName = new ReadOnlyMemory<byte>(cityName.ToArray());
+            //     CachedCityNames[cachedName] = cachedName;
+            // }
+            var cachedName = new ReadOnlyMemory<byte>(cityName.ToArray());
+            
             runningStats = new RunningStats();
             _stats.Add(cachedName, runningStats);
         }
@@ -70,10 +71,8 @@ public sealed class CityTemperatureStatCalc(int capacity)
     
     public void Merge(CityTemperatureStatCalc other)
     {
-        using var otherKvs = other._stats.GetEnumerator();
-        while (otherKvs.MoveNext())
+        foreach (var otherKv in other._stats)
         {
-            var otherKv = otherKvs.Current;
             if (this._stats.TryGetValue(otherKv.Key, out var thisRunningStats))
             {
                 thisRunningStats.Merge(otherKv.Value);

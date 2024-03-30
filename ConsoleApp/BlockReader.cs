@@ -39,7 +39,7 @@ public sealed class BlockReader(Stream reader, int bufferSize)
         return new Block(buffer, pos, ArrayPool<byte>.Shared);
     }
 
-    // Possible inline?
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void EnsureBlockEndsInNewLine(ref byte[] buffer, ref int endPos)
     {
         if (buffer[endPos - 1] != Constants.NewLine)

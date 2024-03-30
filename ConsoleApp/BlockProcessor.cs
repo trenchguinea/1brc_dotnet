@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections;
 using System.Diagnostics;
 
 namespace ConsoleApp;
@@ -11,15 +12,16 @@ public static class BlockProcessor
 
         var statCalc = new CityTemperatureStatCalc(state.ExpectedCityCount);
         var remainingBlockBytes = state.Block.Bytes;
+
         while (!remainingBlockBytes.IsEmpty)
         {
             // Get city
             var semicolonPos = remainingBlockBytes.Span.IndexOf(Constants.Semicolon);
             var city = remainingBlockBytes[..semicolonPos];
-
+            
             // Skip past semicolon
             remainingBlockBytes = remainingBlockBytes[(semicolonPos+1)..];
-
+            
             // Get temperature
             var newlinePos = remainingBlockBytes.Span.IndexOf(Constants.NewLine);
             var temperature = remainingBlockBytes[..newlinePos];
@@ -32,6 +34,9 @@ public static class BlockProcessor
         
         // We're done with the block so free up the underlying buffer
         state.Block.Dispose();
+        
+        // sw.Stop();
+        // Console.WriteLine($"ProcessBlock: {sw.ElapsedMilliseconds}ms");
         return statCalc;
     }
 }

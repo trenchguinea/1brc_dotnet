@@ -33,7 +33,7 @@ public sealed class Block : IDisposable
     
     public void Dispose()
     {
-        _bufferPool.Return(_initialBuffer, true);
+        _bufferPool.Return(_initialBuffer);
         _bytes = ReadOnlyMemory<byte>.Empty;
     }
 }

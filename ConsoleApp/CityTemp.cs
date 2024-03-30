@@ -3,7 +3,7 @@ using System.Text;
 
 namespace ConsoleApp;
 
-public readonly ref struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<byte> temp)
+public readonly struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<byte> temp)
 {
     public ReadOnlyMemory<byte> City { get; } = city;
 
@@ -23,7 +23,8 @@ public readonly ref struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<by
 
         var tenths = temp[i] - zeroCode;
         i -= 2; // skip over decimal
-        var ones = temp[i--] - zeroCode;
+        var ones = temp[i] - zeroCode;
+        i -= 1;
 
         var tens = 0;
         

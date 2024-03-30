@@ -1,6 +1,6 @@
 namespace ConsoleApp;
 
-public sealed class SpanEqualityComparator : IEqualityComparer<ReadOnlyMemory<byte>>
+public sealed class SpanEqualityComparator : IEqualityComparer<ReadOnlyMemory<byte>>, IComparer<ReadOnlyMemory<byte>>
 {
     public static readonly SpanEqualityComparator Instance = new SpanEqualityComparator();
 
@@ -9,6 +9,8 @@ public sealed class SpanEqualityComparator : IEqualityComparer<ReadOnlyMemory<by
     }
     
     public bool Equals(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) => x.Span.SequenceEqual(y.Span);
+
+    public int Compare(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) => x.Span.SequenceCompareTo(y.Span);
 
     public int GetHashCode(ReadOnlyMemory<byte> obj)
     {
