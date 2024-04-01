@@ -1,39 +1,43 @@
 using System.Buffers;
-using System.Collections;
-using System.Diagnostics;
 
 namespace ConsoleApp;
 
-public static class BlockProcessor
+public class MemoryMappedBlockProcessor
 {
     public static CityTemperatureStatCalc ProcessBlock(object? processingState)
     {
-        var state = (ProcessingState) processingState!;
+        var (expectedCityCount, block) = (ProcessingState2) processingState!;
 
-        var statCalc = new CityTemperatureStatCalc(state.ExpectedCityCount);
-        var remainingBlockBytes = state.Block.Bytes;
+        var statCalc = new CityTemperatureStatCalc(expectedCityCount);
+
+        var blockBytes = ArrayPool<byte>.Shared.Rent(block.Size);
+        block.Accessor.ReadArray(0, blockBytes, 0, blockBytes.Length);
+        var remainingBlockBytes = blockBytes.AsMemory()[..block.Size];
 
         while (!remainingBlockBytes.IsEmpty)
         {
             // Get city
             var semicolonPos = remainingBlockBytes.Span.IndexOf(Constants.Semicolon);
             var city = remainingBlockBytes[..semicolonPos];
-            
+        
             // Skip past semicolon
             remainingBlockBytes = remainingBlockBytes[(semicolonPos+1)..];
-            
+
             // Get temperature
             var newlinePos = remainingBlockBytes.Span.IndexOf(Constants.NewLine);
             var temperature = remainingBlockBytes[..newlinePos];
 
-            statCalc.AddCityTemp(new CityTemp(city, temperature));
-            
+            var cityTemp = new CityTemp(city, temperature);
+            statCalc.AddCityTemp(cityTemp);
+
             // Skip past newline
             remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
         }
-        
+
+        ArrayPool<byte>.Shared.Return(blockBytes);
+
         // We're done with the block so free up the underlying buffer
-        state.Block.Dispose();
+        block.Dispose();
         
         return statCalc;
     }

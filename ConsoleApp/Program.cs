@@ -7,31 +7,28 @@ public class Program
 {
     private static readonly int MaxProcessors = 32;
     private static readonly int ExpectedCityCnt = 413;
-    private static readonly int BufferSize = 2 * 1024 * 1024;
+    private static readonly int BufferSize = 4 * 1024 * 1024;
     private static readonly string InputFile = "/Users/seangriffin/Coding/1brc_dotnet/ConsoleApp/resources/measurements_large.txt";
 
     public static async Task Main(string[] args)
     {
         var sw = Stopwatch.StartNew();
         
-        await using var reader = File.Open(InputFile, FileMode.Open);
-
-        var blockReader = new BlockReader(reader, BufferSize);
         var processorTasks = new Task<CityTemperatureStatCalc>[MaxProcessors];
-
         var totalCalc = new CityTemperatureStatCalc(ExpectedCityCnt);
         
-        var totalBlockCnt = 0;
+        var partitioner = new MemoryMappedFilePartitioner(BufferSize);
+        var partitions = partitioner.PartitionFile(InputFile);
+        
         var processorCnt = -1;
-        var block = blockReader.ReadNextBlock();
-        while (!block.IsEmpty)
+
+        foreach (var partition in partitions)
         {
             processorCnt++;
-            totalBlockCnt++;
-            
-            var state = new ProcessingState(ExpectedCityCnt, block);
-            processorTasks[processorCnt] = Task<CityTemperatureStatCalc>.Factory.StartNew(BlockProcessor.ProcessBlock, state);
-            
+
+            var state = new ProcessingState2(ExpectedCityCnt, partition);
+            processorTasks[processorCnt] = Task<CityTemperatureStatCalc>.Factory.StartNew(MemoryMappedBlockProcessor.ProcessBlock, state);
+
             if (processorCnt == MaxProcessors - 1)
             {
                 foreach (var calcTask in Interleaved(processorTasks))
@@ -40,8 +37,6 @@ public class Program
                 }
                 processorCnt = -1;
             }
-            
-            block = blockReader.ReadNextBlock();
         }
         
         Array.Resize(ref processorTasks, processorCnt+1);
@@ -49,9 +44,7 @@ public class Program
         {
             totalCalc.Merge(await calcTask.Unwrap());
         }
-        
-        // Time.Me("Dump output", () =>
-        // {
+
         var finalBuffer = new StringBuilder(16 * 1024);
         finalBuffer.Append('{');
         finalBuffer.AppendJoin(", ",
@@ -59,12 +52,65 @@ public class Program
                 $"{kv.Key}={kv.Value.Min:F1}/{kv.Value.TemperatureAvg:F1}/{kv.Value.Max:F1}"));
         finalBuffer.Append('}');
         Console.WriteLine(finalBuffer);
-        // });
 
         sw.Stop();
-        Console.WriteLine($"Num blocks: {totalBlockCnt}");
+        Console.WriteLine($"Num blocks: {partitions.Length}");
         Console.WriteLine($"Num cities: {totalCalc.NumCities}");
         Console.WriteLine($"Total time: {sw.ElapsedMilliseconds}ms");
+
+        // var sw = Stopwatch.StartNew();
+        //
+        // await using var reader = File.OpenRead(InputFile);
+        //
+        // var blockReader = new BlockReader(reader, BufferSize);
+        // var processorTasks = new Task<CityTemperatureStatCalc>[MaxProcessors];
+        //
+        // var totalCalc = new CityTemperatureStatCalc(ExpectedCityCnt);
+        //
+        // var totalBlockCnt = 0;
+        // var processorCnt = -1;
+        // var block = blockReader.ReadNextBlock();
+        // while (!block.IsEmpty)
+        // {
+        //     processorCnt++;
+        //     totalBlockCnt++;
+        //     
+        //     var state = new ProcessingState(ExpectedCityCnt, block);
+        //     processorTasks[processorCnt] = Task<CityTemperatureStatCalc>.Factory.StartNew(BlockProcessor.ProcessBlock, state);
+        //     
+        //     if (processorCnt == MaxProcessors - 1)
+        //     {
+        //         foreach (var calcTask in Interleaved(processorTasks))
+        //         {
+        //             totalCalc.Merge(await calcTask.Unwrap());
+        //         }
+        //         processorCnt = -1;
+        //     }
+        //     
+        //     block = blockReader.ReadNextBlock();
+        // }
+        //
+        // Array.Resize(ref processorTasks, processorCnt+1);
+        // foreach (var calcTask in Interleaved(processorTasks))
+        // {
+        //     totalCalc.Merge(await calcTask.Unwrap());
+        // }
+        //
+        // // Time.Me("Dump output", () =>
+        // // {
+        // var finalBuffer = new StringBuilder(16 * 1024);
+        // finalBuffer.Append('{');
+        // finalBuffer.AppendJoin(", ",
+        //     totalCalc.FinalizeStats().Select(kv =>
+        //         $"{kv.Key}={kv.Value.Min:F1}/{kv.Value.TemperatureAvg:F1}/{kv.Value.Max:F1}"));
+        // finalBuffer.Append('}');
+        // Console.WriteLine(finalBuffer);
+        // // });
+        //
+        // sw.Stop();
+        // Console.WriteLine($"Num blocks: {totalBlockCnt}");
+        // Console.WriteLine($"Num cities: {totalCalc.NumCities}");
+        // Console.WriteLine($"Total time: {sw.ElapsedMilliseconds}ms");
     }
     
     // This uses the approach described in https://devblogs.microsoft.com/pfxteam/processing-tasks-as-they-complete/

@@ -22,5 +22,6 @@
     &lt;TestId&gt;xUnit::8E0C0A2D-F6FE-48A8-BDCA-0D280D127B3A::net8.0::Tests.HashCodeGeneratorTest&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::8E0C0A2D-F6FE-48A8-BDCA-0D280D127B3A::net8.0::Tests.ParseFloatTest.TestCustomParsing&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::8E0C0A2D-F6FE-48A8-BDCA-0D280D127B3A::net8.0::Tests.ParseFloatTest.TestCustomParsing_NegativeFullLength&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::8E0C0A2D-F6FE-48A8-BDCA-0D280D127B3A::net8.0::Tests.MemoryMappedFilePartitionerTest&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
