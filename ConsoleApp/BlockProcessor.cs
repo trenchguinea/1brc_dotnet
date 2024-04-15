@@ -26,7 +26,7 @@ public static class BlockProcessor
             var newlinePos = remainingBlockBytes.Span.IndexOf(Constants.NewLine);
             var temperature = remainingBlockBytes[..newlinePos];
 
-            statCalc.AddCityTemp(new CityTemp(city, temperature));
+            statCalc.AddCityTemp(new CityTemp(city.Span, temperature.Span));
             
             // Skip past newline
             remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
@@ -35,8 +35,6 @@ public static class BlockProcessor
         // We're done with the block so free up the underlying buffer
         state.Block.Dispose();
         
-        // sw.Stop();
-        // Console.WriteLine($"ProcessBlock: {sw.ElapsedMilliseconds}ms");
         return statCalc;
     }
 }

@@ -43,11 +43,7 @@ public sealed class RunningStats
 
 public sealed class CityTemperatureStatCalc(int capacity)
 {
-    // private static readonly ConcurrentDictionary<ReadOnlyMemory<byte>, ReadOnlyMemory<byte>> CachedCityNames
-    //     = new(Environment.ProcessorCount * 2, 413, SpanEqualityComparator.Instance);
-
-    private readonly Dictionary<ReadOnlyMemory<byte>, RunningStats> _stats =
-        new(capacity, SpanEqualityComparator.Instance);
+    private readonly RunningStatsDictionary _stats = new(capacity);
     
     public int NumCities => _stats.Count;
 
@@ -56,38 +52,27 @@ public sealed class CityTemperatureStatCalc(int capacity)
         var cityName = cityTemp.City;
         if (!_stats.TryGetValue(cityName, out var runningStats))
         {
-            // if (!CachedCityNames.TryGetValue(cityName, out var cachedName))
-            // {
-            //     cachedName = new ReadOnlyMemory<byte>(cityName.ToArray());
-            //     CachedCityNames[cachedName] = cachedName;
-            // }
-            var cachedName = new ReadOnlyMemory<byte>(cityName.ToArray());
-            
             runningStats = new RunningStats();
-            _stats.Add(cachedName, runningStats);
+            _stats.Add(cityName, runningStats);
         }
-        runningStats.AddTemperature(cityTemp.Temperature);
+        runningStats!.AddTemperature(cityTemp.Temperature);
     }
     
     public void Merge(CityTemperatureStatCalc other)
     {
         foreach (var otherKv in other._stats)
         {
-            if (this._stats.TryGetValue(otherKv.Key, out var thisRunningStats))
+            var keySpan = otherKv.Key.Span;
+            if (this._stats.TryGetValue(keySpan, out var thisRunningStats))
             {
-                thisRunningStats.Merge(otherKv.Value);
+                thisRunningStats!.Merge(otherKv.Value);
             }
             else
             {
-                this._stats.Add(otherKv.Key, otherKv.Value);
+                this._stats.Add(keySpan, otherKv.Value);
             }
         }
     }
 
-    public SortedDictionary<string, RunningStats> FinalizeStats()
-    {
-        return new SortedDictionary<string, RunningStats>(_stats.ToDictionary(
-            kv => Encoding.UTF8.GetString(kv.Key.Span),
-            kv => kv.Value.FinalizeStats()));
-    }
+    public SortedDictionary<string, RunningStats> FinalizeStats() => _stats.ToFinalDictionary();
 }

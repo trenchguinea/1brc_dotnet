@@ -7,30 +7,30 @@ public class Program
 {
     private static readonly int MaxProcessors = 32;
     private static readonly int ExpectedCityCnt = 413;
-    private static readonly int BufferSize = 2 * 1024 * 1024;
+    private static readonly int BufferSize = 8 * 1024 * 1024;
     private static readonly string InputFile = "/Users/seangriffin/Coding/1brc_dotnet/ConsoleApp/resources/measurements_large.txt";
 
     public static async Task Main(string[] args)
     {
         var sw = Stopwatch.StartNew();
         
-        await using var reader = File.Open(InputFile, FileMode.Open);
-
-        var blockReader = new BlockReader(reader, BufferSize);
+        await using var reader = File.OpenRead(InputFile);
+        using var fileHandle = reader.SafeFileHandle;
+        
         var processorTasks = new Task<CityTemperatureStatCalc>[MaxProcessors];
-
         var totalCalc = new CityTemperatureStatCalc(ExpectedCityCnt);
+        
+        var partitions = FilePartitioner.PartitionFile(reader, BufferSize);
         
         var totalBlockCnt = 0;
         var processorCnt = -1;
-        var block = blockReader.ReadNextBlock();
-        while (!block.IsEmpty)
+        foreach (var partition in partitions)
         {
             processorCnt++;
             totalBlockCnt++;
-            
-            var state = new ProcessingState(ExpectedCityCnt, block);
-            processorTasks[processorCnt] = Task<CityTemperatureStatCalc>.Factory.StartNew(BlockProcessor.ProcessBlock, state);
+
+            var state = new ProcessingState2(ExpectedCityCnt, fileHandle, partition);
+            processorTasks[processorCnt] = Task<CityTemperatureStatCalc>.Factory.StartNew(PartitionProcessor.ProcessPartition, state);
             
             if (processorCnt == MaxProcessors - 1)
             {
@@ -40,8 +40,6 @@ public class Program
                 }
                 processorCnt = -1;
             }
-            
-            block = blockReader.ReadNextBlock();
         }
         
         Array.Resize(ref processorTasks, processorCnt+1);
@@ -49,6 +47,40 @@ public class Program
         {
             totalCalc.Merge(await calcTask.Unwrap());
         }
+
+        // var blockReader = new BlockReader(reader, BufferSize);
+        // var processorTasks = new Task<CityTemperatureStatCalc>[MaxProcessors];
+        //
+        // var totalCalc = new CityTemperatureStatCalc(ExpectedCityCnt);
+        //
+        // var totalBlockCnt = 0;
+        // var processorCnt = -1;
+        // var block = blockReader.ReadNextBlock();
+        // while (!block.IsEmpty)
+        // {
+        //     processorCnt++;
+        //     totalBlockCnt++;
+        //     
+        //     var state = new ProcessingState(ExpectedCityCnt, block);
+        //     processorTasks[processorCnt] = Task<CityTemperatureStatCalc>.Factory.StartNew(BlockProcessor.ProcessBlock, state);
+        //     
+        //     if (processorCnt == MaxProcessors - 1)
+        //     {
+        //         foreach (var calcTask in Interleaved(processorTasks))
+        //         {
+        //             totalCalc.Merge(await calcTask.Unwrap());
+        //         }
+        //         processorCnt = -1;
+        //     }
+        //     
+        //     block = blockReader.ReadNextBlock();
+        // }
+        //
+        // Array.Resize(ref processorTasks, processorCnt+1);
+        // foreach (var calcTask in Interleaved(processorTasks))
+        // {
+        //     totalCalc.Merge(await calcTask.Unwrap());
+        // }
         
         // Time.Me("Dump output", () =>
         // {

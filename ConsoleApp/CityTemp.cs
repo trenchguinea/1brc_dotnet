@@ -1,15 +1,14 @@
-using System.Globalization;
 using System.Text;
 
 namespace ConsoleApp;
 
-public readonly struct CityTemp(ReadOnlyMemory<byte> city, ReadOnlyMemory<byte> temp)
+public readonly ref struct CityTemp(ReadOnlySpan<byte> city, ReadOnlySpan<byte> temp)
 {
-    public ReadOnlyMemory<byte> City { get; } = city;
+    public ReadOnlySpan<byte> City { get; } = city;
 
-    public int Temperature { get; } = ParseTemp(temp.Span);
+    public int Temperature { get; } = ParseTemp(temp);
 
-    public override string ToString() => $"{Encoding.UTF8.GetString(City.Span)};{Temperature / 10.0f}";
+    public override string ToString() => $"{Encoding.UTF8.GetString(City)};{Temperature / 10.0f}";
 
     private static int ParseTemp(ReadOnlySpan<byte> temp)
     {
