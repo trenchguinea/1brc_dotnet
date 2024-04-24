@@ -34,7 +34,7 @@ public readonly ref struct CityTemp(ReadOnlySpan<byte> city, ReadOnlySpan<byte> 
         // It's a negative number if we either just parsed a -
         // or we have one more character remaining, which must be a -
         // because we'll never have a number > 99 or < 99
-        var isNeg = tens == (neg - zeroCode) | i == 1;
+        var isNeg = tens == (neg - zeroCode) || i == 1;
 
         // Neg is a lower code than 0, so if tens is > 0 it means it's an actual number
         var asInt = (tens > 0 ? tens * 100 : 0) + (ones * 10) + tenths;

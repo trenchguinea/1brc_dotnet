@@ -55,25 +55,36 @@ public class SpanHashCodeBenchmark
     //     }
     // }
     //
+
     [Benchmark]
-    public void HashUsingBitConverter()
+    public void HashFirstFourBytes()
     {
-        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer());
+        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashFirstFourBytesComparer());
         foreach (var sample in _sampleMemories)
         {
             dict.TryAdd(sample, 13);
         }
     }
 
-    [Benchmark]
-    public void HashUsingBitConverter2()
-    {
-        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer2());
-        foreach (var sample in _sampleMemories)
-        {
-            dict.TryAdd(sample, 13);
-        }
-    }
+    // [Benchmark]
+    // public void HashUsingBitConverter()
+    // {
+    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer());
+    //     foreach (var sample in _sampleMemories)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
+    //
+    // [Benchmark]
+    // public void HashUsingBitConverter2()
+    // {
+    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer2());
+    //     foreach (var sample in _sampleMemories)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
 
     [Benchmark]
     public void HashUsingBitConverter3()
@@ -132,6 +143,16 @@ public class SpanHashCodeBenchmark
         {
             var span = obj.Span;
             return HashCode.Combine(span[0], span[^1], span.Length);
+        }
+    }
+
+    private class HashFirstFourBytesComparer : IEqualityComparer<ReadOnlyMemory<byte>>
+    {
+        public bool Equals(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) => x.Span.SequenceEqual(y.Span);
+        public int GetHashCode(ReadOnlyMemory<byte> obj)
+        {
+            var span = obj.Span;
+            return span.Length >= 4 ? BitConverter.ToInt32(span[..4]) : span.Length;
         }
     }
 

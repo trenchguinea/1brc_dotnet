@@ -25,25 +25,19 @@ public static class PartitionProcessor
 
         while (!remainingBlockBytes.IsEmpty)
         {
-            // Get city
-            var semicolonPos = remainingBlockBytes.IndexOf(Constants.Semicolon);
-            var city = remainingBlockBytes[..semicolonPos];
-
-            // Skip past semicolon
-            remainingBlockBytes = remainingBlockBytes[(semicolonPos+1)..];
-            
-            // Get temperature
             var newlinePos = remainingBlockBytes.IndexOf(Constants.NewLine);
-            var temperature = remainingBlockBytes[..newlinePos];
-
+            var line = remainingBlockBytes[..newlinePos];
+            
+            var semicolonPos = line.IndexOf(Constants.Semicolon);
+            var city = line[..semicolonPos];
+            var temperature = line[(semicolonPos+1)..];
+            
             statCalc.AddCityTemp(new CityTemp(city, temperature));
-
-            // Skip past newline
+            
             remainingBlockBytes = remainingBlockBytes[(newlinePos+1)..];
         }
 
         Marshal.FreeHGlobal(buffer);
-        //memoryOwner.Dispose();
         return statCalc;
     }
 }
