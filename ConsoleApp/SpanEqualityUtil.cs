@@ -14,7 +14,7 @@ public static class SpanEqualityUtil
     {
         var div = span.Length / 4;
 
-        var hash = 0;
+        var hash = 13;
         for (var i = 0; i < div; ++i)
         {
             hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));

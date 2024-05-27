@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using System.Text;
 
 namespace ConsoleApp;
@@ -7,7 +6,7 @@ namespace ConsoleApp;
 public class Program
 {
     private static readonly int ExpectedCityCnt = 413;
-    private static readonly int BufferSize = 64 * 1024 * 1024;
+    private static readonly int BufferSize = 32 * 1024 * 1024;
     private static readonly string InputFile = "/Users/seangriffin/Coding/1brc_dotnet/ConsoleApp/resources/measurements_large.txt";
 
     public static async Task Main(string[] args)
@@ -20,10 +19,10 @@ public class Program
         var totalCalc = new CityTemperatureStatCalc(ExpectedCityCnt);
         var partitions = FilePartitioner.PartitionFile(reader, BufferSize);
         var processorTasks = new Task<CityTemperatureStatCalc>[partitions.Count];
-        
+
         for (var i = 0; i < partitions.Count; i++)
         {
-            var state = new ProcessingState2(ExpectedCityCnt, fileHandle, partitions[i]);
+            var state = new ProcessingState(ExpectedCityCnt, fileHandle, partitions[i]);
             processorTasks[i] = Task<CityTemperatureStatCalc>.Factory.StartNew(
                 PartitionProcessor.ProcessPartition, state);
         }
@@ -32,7 +31,7 @@ public class Program
         {
             totalCalc.Merge(await calcTask.Unwrap());
         }
-        
+
         var finalBuffer = new StringBuilder(16 * 1024);
         finalBuffer.Append('{');
         finalBuffer.AppendJoin(", ",
@@ -47,13 +46,13 @@ public class Program
         Console.WriteLine($"Num cities: {totalCalc.NumCities}");
         Console.WriteLine($"Total time: {sw.ElapsedMilliseconds}ms");
     }
-    
+
     // This uses the approach described in https://devblogs.microsoft.com/pfxteam/processing-tasks-as-they-complete/
     private static Task<Task<T>>[] Interleaved<T>(Task<T>[] tasks)
     {
         var buckets = new TaskCompletionSource<Task<T>>[tasks.Length];
         var results = new Task<Task<T>>[buckets.Length];
-        for (var i = 0; i < buckets.Length; i++) 
+        for (var i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new TaskCompletionSource<Task<T>>();
             results[i] = buckets[i].Task;

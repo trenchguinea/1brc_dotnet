@@ -25,15 +25,14 @@ public class SpanHashCodeBenchmark
         }
     }
 
-    [Benchmark(Baseline = true)]
-    public void BaselineString()
-    {
-        var dict = new Dictionary<string, int>(500);
-        foreach (var sample in _sampleStrings)
-        {
-            dict.TryAdd(sample, 13);
-        }
-    }
+    // public void BaselineString()
+    // {
+    //     var dict = new Dictionary<string, int>(500);
+    //     foreach (var sample in _sampleStrings)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
     
     // [Benchmark]
     // public void HashFirstAndLastBytePlusLength()
@@ -56,15 +55,15 @@ public class SpanHashCodeBenchmark
     // }
     //
 
-    [Benchmark]
-    public void HashFirstFourBytes()
-    {
-        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashFirstFourBytesComparer());
-        foreach (var sample in _sampleMemories)
-        {
-            dict.TryAdd(sample, 13);
-        }
-    }
+    // [Benchmark]
+    // public void HashFirstFourBytes()
+    // {
+    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashFirstFourBytesComparer());
+    //     foreach (var sample in _sampleMemories)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
 
     // [Benchmark]
     // public void HashUsingBitConverter()
@@ -86,10 +85,20 @@ public class SpanHashCodeBenchmark
     //     }
     // }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public void HashUsingBitConverter3()
     {
         var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer3());
+        foreach (var sample in _sampleMemories)
+        {
+            dict.TryAdd(sample, 13);
+        }
+    }
+
+    [Benchmark]
+    public void HashUsingBitConverter4()
+    {
+        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer4());
         foreach (var sample in _sampleMemories)
         {
             dict.TryAdd(sample, 13);
@@ -235,6 +244,24 @@ public class SpanHashCodeBenchmark
             var div = span.Length / 4;
 
             var hash = 0;
+            for (var i = 0; i < div; ++i)
+            {
+                hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));
+            }
+
+            return hash ^ span.Length;
+        }
+    }
+
+    private class HashBitConverterComparer4 : IEqualityComparer<ReadOnlyMemory<byte>>
+    {
+        public bool Equals(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) => x.Span.SequenceEqual(y.Span);
+        public int GetHashCode(ReadOnlyMemory<byte> obj)
+        {
+            var span = obj.Span;
+            var div = span.Length / 4;
+
+            var hash = 13;
             for (var i = 0; i < div; ++i)
             {
                 hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));
