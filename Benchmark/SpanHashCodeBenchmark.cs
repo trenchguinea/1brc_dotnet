@@ -65,15 +65,15 @@ public class SpanHashCodeBenchmark
     //     }
     // }
 
-    // [Benchmark]
-    // public void HashUsingBitConverter()
-    // {
-    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer());
-    //     foreach (var sample in _sampleMemories)
-    //     {
-    //         dict.TryAdd(sample, 13);
-    //     }
-    // }
+    [Benchmark]
+    public void HashUsingBitConverter()
+    {
+        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer());
+        foreach (var sample in _sampleMemories)
+        {
+            dict.TryAdd(sample, 13);
+        }
+    }
     //
     // [Benchmark]
     // public void HashUsingBitConverter2()
@@ -95,15 +95,15 @@ public class SpanHashCodeBenchmark
         }
     }
 
-    [Benchmark]
-    public void HashUsingBitConverter4()
-    {
-        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer4());
-        foreach (var sample in _sampleMemories)
-        {
-            dict.TryAdd(sample, 13);
-        }
-    }
+    // [Benchmark]
+    // public void HashUsingBitConverter4()
+    // {
+    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer4());
+    //     foreach (var sample in _sampleMemories)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
 
     // [Benchmark]
     // public void HashUsingHashCodeClass()
@@ -203,11 +203,14 @@ public class SpanHashCodeBenchmark
             switch (span.Length)
             {
                 case 3:
+                {
+                    hash ^= BitConverter.ToInt16(span[..2]);
                     hash ^= span[2];
-                    goto case 2;
+                    break;
+                }
                 case 2:
-                    hash ^= span[1];
-                    goto case 1;
+                    hash ^= BitConverter.ToInt16(span[..2]);
+                    break;
                 case 1:
                     hash ^= span[0];
                     break;

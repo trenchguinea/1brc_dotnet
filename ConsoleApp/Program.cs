@@ -6,8 +6,8 @@ namespace ConsoleApp;
 public class Program
 {
     private static readonly int ExpectedCityCnt = 413;
-    private static readonly int BufferSize = 32 * 1024 * 1024;
-    private static readonly string InputFile = "/Users/seangriffin/Coding/1brc_dotnet/ConsoleApp/resources/measurements_large.txt";
+    private static readonly int BufferSize = 64 * 1024 * 1024;
+    private static readonly string InputFile = "/Users/seangriffin/Coding/1brc_dotnet/ConsoleApp/resources/measurements_medium.txt";
 
     public static async Task Main(string[] args)
     {
@@ -29,8 +29,18 @@ public class Program
 
         foreach (var calcTask in Interleaved(processorTasks))
         {
-            totalCalc.Merge(await calcTask.Unwrap());
+            totalCalc.Merge(await calcTask.Unwrap().ConfigureAwait(false));
         }
+
+        var tempPath = Path.GetTempFileName();
+        Console.WriteLine($"HashCodes stored in {tempPath}");
+        await using var tempFile = File.CreateText(tempPath);
+        foreach (var hc in SpanEqualityUtil.GetHashCodes)
+        {
+            var modular = (hc.Key & 0x7fffffff) % 1249;
+            tempFile.WriteLine(modular);
+        }
+        tempFile.Close();
 
         var finalBuffer = new StringBuilder(16 * 1024);
         finalBuffer.Append('{');
