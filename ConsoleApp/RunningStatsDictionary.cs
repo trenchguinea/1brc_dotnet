@@ -9,45 +9,53 @@ namespace ConsoleApp;
 
 public sealed class RunningStatsDictionary(int capacity) : IEnumerable<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>>
 {
-    private readonly Dictionary<int, List<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>>> _dict = new(capacity);
+    private readonly int _hashTableSize = capacity * 4 + 1;
 
-    public int Count => _dict.Values.SelectMany(valueList => valueList).Count();
+    private readonly List<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>>?[] _dict =
+        new List<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>>?[capacity * 4 + 1];
 
+    public int Count => GetEnumerable().Count();
+
+    public int GetHashCode(ReadOnlySpan<byte> key) =>
+        (SpanEqualityUtil.GetHashCode(key) & int.MaxValue) % _hashTableSize;
+    
     public bool TryGetValue(int keyHashCode, ReadOnlySpan<byte> key, [MaybeNullWhen(false)] out RunningStats stats)
     {
-        Debug.Assert(keyHashCode == SpanEqualityUtil.GetHashCode(key));
-        
-        if (_dict.TryGetValue(keyHashCode, out var matches))
+        Debug.Assert(keyHashCode == GetHashCode(key));
+
+        var matches = _dict[keyHashCode];
+        if (matches is not null)
         {
             stats = FindMatch(key, matches);
             return stats is not null;
         }
-
+        
         stats = null;
         return false;
     }
     
     public void Add(int keyHashCode, ReadOnlySpan<byte> key, RunningStats value)
     {
-        Debug.Assert(keyHashCode == SpanEqualityUtil.GetHashCode(key));
-
+        Debug.Assert(keyHashCode == GetHashCode(key));
+        
+        var matches = _dict[keyHashCode];
+        if (matches is not null)
+        {
+            Debug.Assert(FindMatch(key, matches) is null);
+        }
+        else
+        {
+            matches = new List<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>>(5);
+            _dict[keyHashCode] = matches;
+        }
+        
         var keyBuffer = new byte[key.Length];
         key.CopyTo(keyBuffer);
         var keyAsMemory = new ReadOnlyMemory<byte>(keyBuffer);
 
-        if (_dict.TryGetValue(keyHashCode, out var matches))
-        {
-            Debug.Assert(FindMatch(key, matches) is null);
-            matches.Add(KeyValuePair.Create(keyAsMemory, value));
-        }
-        else
-        {
-            matches = new List<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>>(5)
-                { KeyValuePair.Create(keyAsMemory, value) };
-            _dict.Add(keyHashCode, matches);
-        }
+        matches.Add(KeyValuePair.Create(keyAsMemory, value));
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static RunningStats? FindMatch(ReadOnlySpan<byte> key, List<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>> potentialMatches)
     {
@@ -73,8 +81,15 @@ public sealed class RunningStatsDictionary(int capacity) : IEnumerable<KeyValueP
         return finalDict;
     }
 
-    public IEnumerator<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>> GetEnumerator() =>
-        _dict.Values.SelectMany(valueList => valueList).GetEnumerator();
+    public void DumpDict()
+    {
+        Console.WriteLine(string.Join(',', _dict.Select(entry => entry?.Count ?? 0)));
+    }
+
+    public IEnumerator<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>> GetEnumerator() => GetEnumerable().GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    private IEnumerable<KeyValuePair<ReadOnlyMemory<byte>, RunningStats>> GetEnumerable() =>
+        _dict.Where(v => v is not null).SelectMany(x => x!);
 }

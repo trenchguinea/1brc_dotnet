@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ConsoleApp;
@@ -13,37 +14,20 @@ public static class SpanEqualityUtil
 
     public static int GetHashCode(ReadOnlySpan<byte> span)
     {
-        var len = span.Length;
-        var hash = 0;
+        var div = span.Length / 4;
 
-        switch (len)
+        var hash = 31;
+        for (var i = 0; i < div; ++i)
         {
-            case 1:
-                hash = span[0];
-                break;
-
-            case 2:
-            case 3:
-                hash = BitConverter.ToInt16(span[..2]);
-                break;
-            
-            default:
-            {
-                var div = span.Length / 4;
-                for (var i = 0; i < div; ++i)
-                {
-                    hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));
-                }
-
-                hash ^= span.Length;
-                break;
-            }
+            hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));
         }
+
+        return hash ^ span.Length;
 
         //HashCodes[Encoding.UTF8.GetString(span.ToArray())] = hash;
         HashCodes[hash] = hash;
         return hash;
     }
 
-    public static IDictionary<int, int> GetHashCodes => HashCodes;
+ //   public static IDictionary<int, int> GetHashCodes => HashCodes;
 }

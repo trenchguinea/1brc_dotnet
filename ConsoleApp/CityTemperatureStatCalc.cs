@@ -50,12 +50,14 @@ public sealed class CityTemperatureStatCalc(int capacity)
     public void AddCityTemp(CityTemp cityTemp)
     {
         var cityName = cityTemp.City;
-        var hashCode = SpanEqualityUtil.GetHashCode(cityName);
+        var hashCode = _stats.GetHashCode(cityName);
+        
         if (!_stats.TryGetValue(hashCode, cityName, out var runningStats))
         {
             runningStats = new RunningStats();
             _stats.Add(hashCode, cityName, runningStats);
         }
+        
         runningStats.AddTemperature(cityTemp.Temperature);
     }
     
@@ -64,7 +66,8 @@ public sealed class CityTemperatureStatCalc(int capacity)
         foreach (var otherKv in other._stats)
         {
             var keySpan = otherKv.Key.Span;
-            var hashCode = SpanEqualityUtil.GetHashCode(keySpan);
+            var hashCode = _stats.GetHashCode(keySpan);
+            
             if (this._stats.TryGetValue(hashCode, keySpan, out var thisRunningStats))
             {
                 thisRunningStats.Merge(otherKv.Value);
@@ -76,5 +79,9 @@ public sealed class CityTemperatureStatCalc(int capacity)
         }
     }
 
-    public SortedDictionary<string, RunningStats> FinalizeStats() => _stats.ToFinalDictionary();
+    public SortedDictionary<string, RunningStats> FinalizeStats()
+    {
+        //_stats.DumpDict();
+        return _stats.ToFinalDictionary();
+    }
 }

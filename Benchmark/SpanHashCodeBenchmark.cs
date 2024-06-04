@@ -65,15 +65,15 @@ public class SpanHashCodeBenchmark
     //     }
     // }
 
-    [Benchmark]
-    public void HashUsingBitConverter()
-    {
-        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer());
-        foreach (var sample in _sampleMemories)
-        {
-            dict.TryAdd(sample, 13);
-        }
-    }
+    // [Benchmark]
+    // public void HashUsingBitConverter()
+    // {
+    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer());
+    //     foreach (var sample in _sampleMemories)
+    //     {
+    //         dict.TryAdd(sample, 13);
+    //     }
+    // }
     //
     // [Benchmark]
     // public void HashUsingBitConverter2()
@@ -95,15 +95,15 @@ public class SpanHashCodeBenchmark
         }
     }
 
-    // [Benchmark]
-    // public void HashUsingBitConverter4()
-    // {
-    //     var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer4());
-    //     foreach (var sample in _sampleMemories)
-    //     {
-    //         dict.TryAdd(sample, 13);
-    //     }
-    // }
+    [Benchmark]
+    public void HashUsingBitConverter4()
+    {
+        var dict = new Dictionary<ReadOnlyMemory<byte>, int>(500, new HashBitConverterComparer4());
+        foreach (var sample in _sampleMemories)
+        {
+            dict.TryAdd(sample, 13);
+        }
+    }
 
     // [Benchmark]
     // public void HashUsingHashCodeClass()
@@ -264,7 +264,7 @@ public class SpanHashCodeBenchmark
             var span = obj.Span;
             var div = span.Length / 4;
 
-            var hash = 13;
+            var hash = 31;
             for (var i = 0; i < div; ++i)
             {
                 hash ^= BitConverter.ToInt32(span.Slice(i * 4, 4));
