@@ -42,7 +42,7 @@ public class Program
         // }
         // tempFile.Close();
 
-        var finalBuffer = new StringBuilder(16 * 1024);
+        var finalBuffer = new StringBuilder(12 * 1024);
         finalBuffer.Append('{');
         finalBuffer.AppendJoin(", ",
             totalCalc.FinalizeStats().Select(kv =>

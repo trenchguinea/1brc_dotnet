@@ -1,6 +1,3 @@
-using System.Collections.Concurrent;
-using System.Text;
-
 namespace ConsoleApp;
 
 public sealed class RunningStats
@@ -13,7 +10,7 @@ public sealed class RunningStats
     public float Min { get; private set; }
     public float Max { get; private set; }
     public float TemperatureAvg { get; private set; }
-    
+
     public void AddTemperature(int temperature)
     {
         if (temperature < _min) _min = temperature;
@@ -31,7 +28,7 @@ public sealed class RunningStats
         _temperatureSum += other._temperatureSum;
         _numTemperatures += other._numTemperatures;
     }
-    
+
     public RunningStats FinalizeStats()
     {
         Min = _min / 10.0f;
@@ -44,30 +41,30 @@ public sealed class RunningStats
 public sealed class CityTemperatureStatCalc(int capacity)
 {
     private readonly RunningStatsDictionary _stats = new(capacity);
-    
+
     public int NumCities => _stats.Count;
 
     public void AddCityTemp(CityTemp cityTemp)
     {
         var cityName = cityTemp.City;
         var hashCode = _stats.GetHashCode(cityName);
-        
+
         if (!_stats.TryGetValue(hashCode, cityName, out var runningStats))
         {
             runningStats = new RunningStats();
             _stats.Add(hashCode, cityName, runningStats);
         }
-        
+
         runningStats.AddTemperature(cityTemp.Temperature);
     }
-    
+
     public void Merge(CityTemperatureStatCalc other)
     {
         foreach (var otherKv in other._stats)
         {
             var keySpan = otherKv.Key.Span;
             var hashCode = _stats.GetHashCode(keySpan);
-            
+
             if (this._stats.TryGetValue(hashCode, keySpan, out var thisRunningStats))
             {
                 thisRunningStats.Merge(otherKv.Value);

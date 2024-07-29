@@ -23,4 +23,4 @@ using ConsoleApp;
 // }
 //
 // return;
-BenchmarkRunner.Run<SpanHashCodeBenchmark>();
+BenchmarkRunner.Run<TupleVsRecord>();

@@ -1,6 +1,9 @@
+using System.Collections.Specialized;
+using Microsoft.VisualBasic;
+
 namespace ConsoleApp;
 
-public record struct Partition(long Pos, int Length);
+public readonly record struct Partition(long Pos, int Length);
 
 public static class FilePartitioner
 {
@@ -15,11 +18,11 @@ public static class FilePartitioner
             var startPos = stream.Position;
             stream.Position = i * partitionSize;
 
-            int bite;
+            int b;
             do
             {
-                bite = stream.ReadByte();
-            } while (bite != -1 && bite != Constants.NewLine);
+                b = stream.ReadByte();
+            } while (b != -1 && b != Constants.NewLine);
             
             partitions.Add(new Partition(startPos, (int) (stream.Position - startPos)));
         }
